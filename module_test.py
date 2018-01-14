@@ -43,8 +43,12 @@ def plot_pi1_1d(pi1_gen):
     plt.title('the alternative distribution')
     
 def plot_data_1d(p,x,h):
-    plt.scatter(x[h==1][:50],p[h==1][:50],color='r',alpha=0.6,label='alt')
-    plt.scatter(x[h==0][:50],p[h==0][:50],color='b',alpha=0.6,label='null')
+    rnd_idx=np.random.permutation(p.shape[0])[0:1000]
+    p = p[rnd_idx]
+    x = x[rnd_idx]
+    h = h[rnd_idx]
+    plt.scatter(x[h==1],p[h==1],color='r',alpha=0.2,label='alt')
+    plt.scatter(x[h==0],p[h==0],color='b',alpha=0.2,label='null')
     plt.xlabel('covariate')
     plt.ylabel('p-value')
     plt.title('hypotheses')    
