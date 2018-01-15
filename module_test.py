@@ -76,6 +76,12 @@ def storey_bh(p,alpha=0.05,lamb=0.6,vis=0):
         print("### End Summary ###")
     return n_rej,t_rej,pi0_hat
 
+# ancillary functions for PrimFDR
+def plot_t(t,x):
+    plt.scatter(x,t,alpha=0.2)
+    plt.ylabel('t')
+    plt.xlabel('x')
+
 
 
     
