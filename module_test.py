@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 
 ## generating the 1d toy example
 def toy_data_1d(job_id=0,n_sample=10000,vis=0):
+    np.random.seed(42)
     if job_id == 0: # Gaussian mixtures     
-        x   = np.random.uniform(-1,1,size=n_sample)
+        x   = np.random.uniform(0,1,size=n_sample)
         pi1 = pi1_gen(x)
         p   = np.zeros(n_sample)
         
@@ -28,14 +29,15 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
             plt.legend()
             plt.show() 
         return p,x,h
+    
 # sub-routines for toy_data_1d
 def pi1_gen(x): # need to be fixed 
-    pi1=0.1*sp.stats.norm.pdf(x,loc=0.5,scale=0.2)+0.1*sp.stats.norm.pdf(x,loc=-0.8,scale=0.1)
+    pi1=0.1*sp.stats.norm.pdf(x,loc=0.8,scale=0.2)+0.1*sp.stats.norm.pdf(x,loc=0.2,scale=0.1)
     pi1+=0.1*(x+1) 
     return pi1
 
 def plot_pi1_1d(pi1_gen):
-    x_grid   = np.linspace(-1,1,200)
+    x_grid   = np.linspace(0,1,100)
     pi1_grid = pi1_gen(x_grid)  
     plt.plot(x_grid,pi1_grid)
     plt.xlabel('covariate')
@@ -54,7 +56,22 @@ def plot_data_1d(p,x,h):
     plt.title('hypotheses')    
 
 ## testing methods 
-def bh(p,alpha=0.05):
+def bh(p,alpha=0.05,vis=0):
+    n_sample = p.shape[0]
+    p_sort   = sorted(p)
+    n_rej    = 0
+    for i in range(n_sample):
+        if p_sort[i] < i*alpha/n_sample:
+            n_rej = i
+    t_rej = p_sort[n_rej]
+    if vis == 1:
+        print("### Summary ###")
+        print("method: BH")
+        print("# rejections: %s"%str(n_rej))
+        print("rejection threshold: %s"%str(t_rej))
+        print("### End Summary ###")
+    return n_rej,t_rej
+
     pass ## fix it
 
 def storey_bh(p,alpha=0.05,lamb=0.6,vis=0):
