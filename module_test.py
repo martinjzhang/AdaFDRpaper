@@ -18,10 +18,17 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
         
         # generating the p-values 
         p[h==0] = np.random.uniform(size=n0)
-        p[h==1] = np.random.beta(a=0.3,b=4,size=n1)
+        p[h==1] = np.random.beta(a=0.4,b=4,size=n1)
+        
+        #plt.figure()
+        #plt.hist(p[h==1],bins=100)
+        #plt.show()
+        #print(np.mean(p[h==1]))
         
         if vis == 1:
-            plt.figure(figsize=[12,5])
+            print('### Summary ###')
+            print('# null: %s, # alt: %s:, null proportion: %s'%(str(np.sum(h==0)),str(np.sum(h==1)),str(np.sum(h==0)/h.shape[0])))
+            plt.figure(figsize=[16,5])
             plt.subplot(121)
             plot_pi1_1d(pi1_gen)
             plt.subplot(122)
@@ -32,8 +39,8 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
     
 # sub-routines for toy_data_1d
 def pi1_gen(x): # need to be fixed 
-    pi1=0.1*sp.stats.norm.pdf(x,loc=0.8,scale=0.2)+0.1*sp.stats.norm.pdf(x,loc=0.2,scale=0.1)
-    pi1+=0.1*(x+1) 
+    pi1=0.03*sp.stats.norm.pdf(x,loc=0.2,scale=0.05)+0.04*sp.stats.norm.pdf(x,loc=0.8,scale=0.05)
+    pi1+=0.15*x 
     return pi1
 
 def plot_pi1_1d(pi1_gen):
@@ -44,8 +51,8 @@ def plot_pi1_1d(pi1_gen):
     plt.ylabel('alt distribution')
     plt.title('the alternative distribution')
     
-def plot_data_1d(p,x,h):
-    rnd_idx=np.random.permutation(p.shape[0])[0:1000]
+def plot_data_1d(p,x,h,n_pt=1000):
+    rnd_idx=np.random.permutation(p.shape[0])[0:n_pt]
     p = p[rnd_idx]
     x = x[rnd_idx]
     h = h[rnd_idx]
