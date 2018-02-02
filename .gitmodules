@@ -1,0 +1,3 @@
+[submodule "NeuralFDR"]
+	path = NeuralFDR
+	url = https://github.com/fxia22/NeuralFDR.git
