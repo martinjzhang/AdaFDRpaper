@@ -124,8 +124,9 @@ def plot_t(t,p,x,h=None,color=None,label=None):
         plt.ylim([0,2*t.max()])
             
     else:
-        for i in range(x.shape[1]):
-            plt.subplot('1'+str(x.shape[1])+str(i+1))
+        n_plot = min(x.shape[1],4)
+        for i in range(n_plot):
+            plt.subplot('1'+str(n_plot)+str(i+1))
             sort_idx=x[:,i].argsort()
             if h is None:
                 plt.scatter(x[:,i],p,alpha=0.1)
@@ -165,15 +166,14 @@ def plot_data_2d(p,x,h,n_pt=1000):
     ancillary functions
 """ 
 def sigmoid(x):
+    x = x.clip(min=-20,max=20)
     return 1/(1+np.exp(-x))
+        
 
 def inv_sigmoid(w):
+    w = w.clip(min-1e-8,max=1-1e-8)
     return np.log(w/(1-w))
-
-
-
-
-    
+      
     
 ''' A simple profiler for logging '''
 import logging

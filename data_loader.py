@@ -71,22 +71,7 @@ def neuralfdr_generate_data_1D(job=0, n_samples=10000,data_vis=0, num_case=4):
                 p[i] = np.random.beta(a = np.random.uniform(0.2,0.4), b = 4)
                 h[i] = 1
         return p,h,X
-    
-def neuralfdr_generate_data_1D_cont(pi1, X, job=0):
-    if job == 0: # discrete case
-        n_samples = len(X)
-        p = np.zeros(n_samples)
-        h = np.zeros(n_samples)
-        
-        for i in range(n_samples):
-            rnd = np.random.uniform()
-            if rnd > pi1[i]:
-                p[i] = np.random.uniform()
-                h[i] = 0
-            else:
-                p[i] = np.random.beta(a = np.random.uniform(0.2,0.4), b = 4)
-                h[i] = 1
-        return p, h, X
+   
     
 def neuralfdr_generate_data_2D(job=0, n_samples=100000,data_vis=0):
     np.random.seed(42)
@@ -201,7 +186,108 @@ def neuralfdr_generate_data_2D(job=0, n_samples=100000,data_vis=0):
             ax2.legend((alt,nul),('50 alternatives', '50 nulls'))
             
         return p, h, X
+
+def load_2DGM(n_samples=100000,verbose=False):
+    np.random.seed(42)
+    x1 = np.random.uniform(-1,1,size = n_samples)
+    x2 = np.random.uniform(-1,1,size = n_samples)
+    pi1 = ((mlab.bivariate_normal(x1, x2, 0.25, 0.25, -0.5, -0.2)+
+               mlab.bivariate_normal(x1, x2, 0.25, 0.25, 0.7, 0.5))/2).clip(max=1)        
+    p = np.zeros(n_samples)
+    h = np.zeros(n_samples)
+               
+    for i in range(n_samples):
+        rnd = np.random.uniform()
+        if rnd > pi1[i]:
+            p[i] = np.random.uniform()
+            h[i] = 0
+        else:
+            p[i] = np.random.beta(a = 0.3, b = 4)
+            h[i] = 1
+    X = np.concatenate([[x1],[x2]]).T
+    X = (X+1)/2
+      
+    if verbose:
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        x_grid = np.arange(-1, 1, 1/100.0)
+        y_grid = np.arange(-1, 1, 1/100.0)
+        X_grid, Y_grid = np.meshgrid(x_grid, y_grid)
+        pi1_grid = ((mlab.bivariate_normal(X_grid, Y_grid, 0.25, 0.25, -0.5, -0.2)+
+           mlab.bivariate_normal(X_grid, Y_grid, 0.25, 0.25, 0.7, 0.5))/2).clip(max=1)  
+        ax1.pcolor(X_grid, Y_grid, pi1_grid)
+        
+        ax2 = fig.add_subplot(122)
+        alt=ax2.scatter(x1[h==1][1:50], x2[h==1][1:50],color='r')
+        nul=ax2.scatter(x1[h==0][1:50], x2[h==0][1:50],color='b')
+        ax2.legend((alt,nul),('50 alternatives', '50 nulls'))           
+    return p,h,X
+
+def load_2Dslope(n_samples=100000,verbose=False):
+    x1 = np.random.uniform(-1,1,size = n_samples)
+    x2 = np.random.uniform(-1,1,size = n_samples)
+    pi1 = 0.1 * (x1 + 1) /2 +  0.3 *(1-x2) / 2
     
+    p = np.zeros(n_samples)
+    h = np.zeros(n_samples)
+     
+    for i in range(n_samples):
+        rnd = np.random.uniform()
+        if rnd > pi1[i]:
+            p[i] = np.random.uniform()
+            h[i] = 0
+        else:
+            p[i] = np.random.beta(a = 0.3, b = 4)
+            h[i] = 1
+    X = np.concatenate([[x1],[x2]]).T
+    X = (X+1)/2
+    
+    if verbose:
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        x_grid = np.arange(-1, 1, 1/100.0)
+        y_grid = np.arange(-1, 1, 1/100.0)
+        X_grid, Y_grid = np.meshgrid(x_grid, y_grid)
+        pi1_grid =  0.1 * (X_grid + 1) /2 +  0.3 *(1-Y_grid) / 2
+        
+        ax1.pcolor(X_grid, Y_grid, pi1_grid)
+        
+        ax2 = fig.add_subplot(122)
+        alt=ax2.scatter(x1[h==1][1:50], x2[h==1][1:50],color='r')
+        nul=ax2.scatter(x1[h==0][1:50], x2[h==0][1:50],color='b')
+        ax2.legend((alt,nul),('50 alternatives', '50 nulls'))       
+    return p,h,X
+
+def load_5DGM(n_sample=100000,verbose=False):
+    p,h,x = load_2DGM(n_samples=n_sample,verbose=verbose) 
+    x_noise = np.random.uniform(high=1,low=-1,size = (n_sample,3))
+    x = np.concatenate([x,x_noise],1)
+    return p,h,x
+
+def load_100D(n_sample=100000,verbose=False):
+    def generate_data_1D_cont(pi1,X):
+        n_samples = len(X)
+        p = np.zeros(n_samples)
+        h = np.zeros(n_samples)
+        
+        for i in range(n_samples):
+            rnd = np.random.uniform()
+            if rnd > pi1[i]:
+                p[i] = np.random.uniform()
+                h[i] = 0
+            else:
+                p[i] = np.random.beta(a = np.random.uniform(0.2,0.4), b = 4)
+                h[i] = 1
+        return p, h, X
+    
+    X = np.random.uniform(high = 5, size = (n_sample,))
+    pi1 = (5-X) / 10.0
+    p, h, x = generate_data_1D_cont(pi1, X)
+    x_noise = np.random.uniform(high = 5, size = (n_sample,99))
+    x = np.concatenate([np.expand_dims(x,1), x_noise], 1)
+    return p,h,x
+
+
 def load_airway(verbose=False):
     file_name='/data/martin/NeuralFDR/NeuralFDR_data/data_airway.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
@@ -247,9 +333,9 @@ def load_GTEx_1d(verbose=False):
     the full data size is 10623893
 """ 
 def load_GTEx_full(verbose=False):
-    file_name='/data/martin/NeuralFDR/NeuralFDR_data/gtex_full.csv'
+    file_name='/data/martin/NeuralFDR/NeuralFDR_data/gtex_new_filtered.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
-    x,p,n_full = X[:,0:3],X[:,3],10623893
+    x,p,n_full = X[:,0:4],X[:,4],10623893
     if verbose:
         print('## Load GTEx full data ##')
         print('# all hypothesis: %d'%n_full)

@@ -109,9 +109,7 @@ def PrimFDR_v2(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
         #t = 1/100*np.log((t_alt+0.001)/(t_null+0.001))      
         t = (pi_alt+1e-5)/(pi_null+1e-5)
         #t = np.log((pi_alt+pi_null)/(pi_null))
-        
-        
-        
+               
         gamma = rescale_mirror(t,p,alpha)   
         t *= gamma
         result_summary(p<t,h) 
