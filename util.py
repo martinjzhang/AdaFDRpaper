@@ -3,91 +3,9 @@ import scipy as sp
 from scipy import stats
 import matplotlib.pyplot as plt
 
-""" 
-    preprocessing: standardize the hypothesis features 
-""" 
-
-def x_prep(x_,verbose=False):
-    x = x_.copy()
-    d=1 if len(x.shape)==1 else x.shape[1]
-    if verbose:
-        print('Pre prep')
-        plt.figure(figsize=[18,5])
-        for i in range(min(x.shape[1],3)):
-            plt.subplot('13'+str(i+1))
-            plt.hist(x[:,i],bins=50)
-            plt.title('dimension %s'%str(i+1))
-        plt.show()                
-    
-    ## preprocesing    
-    x = rank(x)
-    
-    if d==1:    
-        x = (x-x.min())/(x.max()-x.min()) 
-    else: 
-        for i in range(x.shape[1]):
-            x[:,i] = (x[:,i]-x[:,i].min())/(x[:,i].max()-x[:,i].min())     
-    
-    if verbose:
-        print('Post prep')
-        plt.figure(figsize=[18,5])
-        for i in range(min(x.shape[1],3)):
-            plt.subplot('13'+str(i+1))
-            plt.hist(x[:,i],bins=50)
-            plt.title('dimension %s'%str(i+1))
-        plt.show()
-    return x
-
-## baseline comparison methods
-def bh(p,alpha=0.05,n_sample=None,verbose=False):
-    if n_sample is None: n_sample = p.shape[0]
-    p_sort   = sorted(p)
-    n_rej    = 0
-    for i in range(p.shape[0]):
-        if p_sort[i] < i*alpha/n_sample:
-            n_rej = i
-    t_rej = p_sort[n_rej]
-    if verbose:
-        print("### bh summary ###")
-        print("# rejections: %s"%str(n_rej))
-        print("rejection threshold: %s"%str(t_rej))
-        print("\n")
-    return n_rej,t_rej
-
-def storey_bh(p,alpha=0.05,lamb=0.6,n_sample=None,verbose=False):
-    if n_sample is None: n_sample = p.shape[0]
-    pi0_hat  = np.sum(p>lamb)/n_sample/(1-lamb)
-    alpha   /= pi0_hat
-    p_sort = sorted(p)
-    n_rej = 0
-    for i in range(p.shape[0]):
-        if p_sort[i] < i*alpha/n_sample:
-            n_rej = i
-    t_rej = p_sort[n_rej]
-    if verbose:
-        print("### sbh summary ###")
-        print("# rejections: %s"%str(n_rej))
-        print("rejection threshold: %s"%str(t_rej))
-        print("null estimate: %s"%str(pi0_hat))
-        print("\n")
-    return n_rej,t_rej,pi0_hat
-
-# summary functions 
-def evaluation(p,t,h):
-    print("### Testing Summary ###")
-    print("# rejections: %s"%str(np.sum(p<t)))
-    print('FDP: %s'%str( np.sum((h==0)*(p<t)/np.sum(p<t))))
-    print("### End Summary ###\n")
-    
-def result_summary(pred,h):
-    print("## Testing Summary ##")
-    if h is not None: print("Num of alternatives:",np.sum(h))
-    print("Num of discovery:",np.sum(pred))
-    if h is not None: print("Num of true discovery:",np.sum(pred * h))
-    if h is not None: print("Actual FDP:", 1-np.sum(pred * h) / np.sum(pred))
-    print('\n')
-
-# ancillary functions for PrimFDR
+"""
+    calculate the dimension-wise rank statistics
+"""
 def rank(x):
     ranks = np.empty_like(x)
     if len(x.shape)==1:
@@ -98,16 +16,129 @@ def rank(x):
             temp = x[:,i].argsort(axis=0)       
             ranks[temp,i] = np.arange(x.shape[0])
     return ranks
+
+"""
+    rescale to have the mirror estimate below level alpha
+"""
+def rescale_mirror(t,p,alpha,verbose=False):
+    gamma_l = 0
+    #gamma_u = 1/np.mean(t)
+    gamma_u = 1/np.max(t)*(p[p<0.5].max())
+    gamma_m = (gamma_u+gamma_l)/2
+
+    while gamma_u-gamma_l>1e-8 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
+        gamma_m = (gamma_l+gamma_u)/2
+        #print(gamma_l,gamma_u,(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
+        if (np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m) < alpha:
+            gamma_l = gamma_m
+        else: 
+            gamma_u = gamma_m
+            
+    return (gamma_u+gamma_l)/2  
+
+"""
+    rescale to have the mean-t estimate below level alpha 
+    this is not used here 
+"""
+
+def rescale_naive(t,p,alpha,nr=1,verbose=False):
+    print('### rescale_naive ###')
+    gamma_l = 0
+    gamma_u = 1/np.mean(t)
+    gamma_m = (gamma_l+gamma_u)/2
+    while gamma_u-gamma_l>1e-8 or (np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m)>alpha):
+        print(gamma_l,gamma_u,np.sum(t*gamma_m)*nr,np.sum(p<t*gamma_m))
+        gamma_m = (gamma_l+gamma_u)/2
+        if np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m) < alpha:
+            gamma_l = gamma_m
+        else: 
+            gamma_u = gamma_m
+    print('\n')
+    return (gamma_u+gamma_l)/2
+        
+"""
+    calculate the threshold based on the learned mixture: trend+bump
+"""
+def t_cal(x,a,b,w,mu,sigma):
+    K = w.shape[0]
+    if len(x.shape)==1:
+        t = np.exp(x*a+b)
+    else:
+        t = np.exp(x.dot(a)+b)
+    for i in range(K):
+        if len(x.shape)==1:
+            t += np.exp(w[i])*np.exp(-(x-mu[i])**2/sigma[i])
+        else:
+            t += np.exp(w[i])*np.exp(-np.sum((x-mu[i])**2/sigma[i],axis=1))
+    return t
     
+""" 
+    summary the result based on the predicted value and the true value 
+""" 
+def result_summary(pred,h):
+    if h is not None: print("# Num of alternatives:",np.sum(h))
+    print("# Num of discovery:",np.sum(pred))
+    if h is not None: print("# Num of true discovery:",np.sum(pred * h))
+    if h is not None: print("# Actual FDP:", 1-np.sum(pred * h) / np.sum(pred))
+    print('\n')
     
+## summary functions 
+#def evaluation(p,t,h):
+#    print("### Testing Summary ###")
+#    print("# rejections: %s"%str(np.sum(p<t)))
+#    print('FDP: %s'%str( np.sum((h==0)*(p<t)/np.sum(p<t))))
+#    print("### End Summary ###\n")
+
+
+"""
+    basic functions for visualization
+""" 
+def plot_x(x,x_dim=None):
+    if len(x.shape)==1:
+        plt.hist(x,bins=50)
+    else:
+        if x_dim is None: x_dim = np.arange(x.shape[1])            
+        for i,i_dim in enumerate(x_dim):
+            plt.subplot('1'+str(len(x_dim))+str(i+1))
+            plt.hist(x[:,i_dim],bins=50)
+            plt.title('dimension %s'%str(i_dim+1))   
     
-def plot_t(t,x):
-    plt.scatter(x,t,alpha=0.2)
-    plt.ylim([0,1.2*t.max()])
-    plt.ylabel('t')
-    plt.xlabel('x')
-    
-    
+def plot_t(t,p,x,h=None,color=None,label=None):
+    if color is None: color = 'darkorange'
+        
+    if t.shape[0]>5000:
+        rand_idx=np.random.permutation(x.shape[0])[0:5000]
+        t = t[rand_idx]
+        p = p[rand_idx]
+        x = x[rand_idx]
+        if h is not None: h = h[rand_idx]
+            
+    if len(x.shape)==1:
+        sort_idx = x.argsort()
+        if h is None:
+            plt.scatter(x,p,alpha=0.1,color='royalblue')
+        else:
+            plt.scatter(x[h==0],p[h==0],alpha=0.1,color='royalblue')
+            plt.scatter(x[h==1],p[h==1],alpha=0.1,color='seegreen')
+        plt.plot(x[sort_idx],t[sort_idx],color=color,label=label)
+        plt.ylim([0,2*t.max()])
+            
+    else:
+        for i in range(x.shape[1]):
+            plt.subplot('1'+str(x.shape[1])+str(i+1))
+            sort_idx=x[:,i].argsort()
+            if h is None:
+                plt.scatter(x[:,i],p,alpha=0.1)
+            else:
+                plt.scatter(x[:,i][h==0],p[h==0],alpha=0.1,color='royalblue')
+                plt.scatter(x[:,i][h==1],p[h==1],alpha=0.1,color='seegreen')
+            plt.scatter(x[:,i][sort_idx],t[sort_idx],s=8,alpha=0.2,color='darkorange')
+            plt.ylim([0,2*t.max()])
+    #plt.scatter(x,t,alpha=0.2)
+    #plt.ylim([0,1.2*t.max()])
+    #plt.ylabel('t')
+    #plt.xlabel('x')
+        
 def plot_data_1d(p,x,h,n_pt=1000):
     rnd_idx=np.random.permutation(p.shape[0])[0:n_pt]
     p = p[rnd_idx]
@@ -130,13 +161,18 @@ def plot_data_2d(p,x,h,n_pt=1000):
     plt.ylabel('covariate 2')
     plt.title('hypotheses') 
 
-    
+"""
+    ancillary functions
+""" 
 def sigmoid(x):
     return 1/(1+np.exp(-x))
 
 def inv_sigmoid(w):
     return np.log(w/(1-w))
-    
+
+
+
+
     
     
 ''' A simple profiler for logging '''

@@ -241,15 +241,20 @@ def load_GTEx_1d(verbose=False):
         print('\n')
     return p,x
 
+"""
+    load the GTEx full data 
+    data are only kept for those with p-values >0.995 or <0.005
+    the full data size is 10623893
+""" 
 def load_GTEx_full(verbose=False):
     file_name='/data/martin/NeuralFDR/NeuralFDR_data/gtex_full.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
-    x=X[:,0:3]
-    p=X[:,3]    
+    x,p,n_full = X[:,0:3],X[:,3],10623893
     if verbose:
-        print('## airway data ##')
-        print('# hypothesis: %s'%str(x.shape[0]))
+        print('## Load GTEx full data ##')
+        print('# all hypothesis: %d'%n_full)
+        print('# filtered hypothesis: %d'%x.shape[0])
         for i in range(5):
-            print('p=%s, x=%s'%(str(p[i]),str(x[i])))
+            print('# p=%s, x=%s'%(str(p[i]),str(x[i])))
         print('\n')
-    return p,x
+    return p,x,n_full
