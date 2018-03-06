@@ -7,6 +7,8 @@ from torch.autograd import Variable
 from util import *
 from multiprocessing import Pool
 
+#from torch.multiprocessing import Pool
+
 """ 
     preprocessing: standardize the hypothesis features 
     x_: np_array, the covariates data.
@@ -16,17 +18,59 @@ from multiprocessing import Pool
     fix: sorting for discrete features
 """ 
 
-def x_prep(x_,qt_norm=True,x_dim=None,verbose=False):
+def x_prep(x_,p,qt_norm=True,reorder=True,x_dim=None,verbose=False):
+    def meta_cal(x,p,reorder=True):
+        feature_type = 'discrete' if np.unique(x).shape[0]<100 else 'continuous'
+        if feature_type=='discrete':
+            ## separate the null and the alt proportion
+            _,t_BH = bh(p,alpha=0.1)
+            x_null,x_alt = x[p>0.5],x[p<t_BH]  
+            x_val = np.unique(x)
+            
+            ## calculate the ratio
+            cts_null = np.zeros([x_val.shape[0]],dtype=int)
+            cts_alt = np.zeros([x_val.shape[0]],dtype=int)
+            for i,val in enumerate(x_val):
+                cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
+            p_null = (cts_null+1)/np.sum(cts_null+1)
+            p_alt = (cts_alt+1)/np.sum(cts_alt+1)      
+            p_ratio = p_alt/p_null 
+            
+            ## resort according to the ratio
+            idx_sort = p_ratio.argsort()
+            x_new = np.copy(x)
+            x_val_new=[]
+            for i in range(x_val.shape[0]):
+                x_new[x==x_val[idx_sort[i]]] = x_val[i]   
+                x_val_new.append(x_val[idx_sort[i]])              
+            return x_new,[feature_type,x_val_new]
+        else:
+            return x,[feature_type,None]            
+    
     x = x_.copy()
     d=1 if len(x.shape)==1 else x.shape[1]
+    meta_feature = []
     if verbose:
         plt.figure(figsize=[18,5])
         plt.suptitle('before x_prep')
         plot_x(x,x_dim=x_dim)       
         plt.show()                
     
-    ## preprocesing    
+    ## preprocesing
+    # reorder the discrete features 
+    if reorder: 
+        if d==1:
+            x,temp_meta = meta_cal(x,p,reorder)
+            meta_feature.append(temp_meta)
+        else:
+            for i in range(d):
+                x[:,i],temp_meta = meta_cal(x[:,i],p,reorder)
+                meta_feature.append(temp_meta)
+        
+    # quantile normalization
     if qt_norm: x=rank(x)
+        
+    # scale to be between 0 and 1
     x = (x-x.min(axis=0))/(x.max(axis=0)-x.min(axis=0)) 
     
     if verbose:
@@ -34,148 +78,114 @@ def x_prep(x_,qt_norm=True,x_dim=None,verbose=False):
         plt.suptitle('after x_prep')
         plot_x(x,x_dim=x_dim) 
         plt.show()
-    return x
+        
+    return x,meta_feature
 
 """ 
     feature_explore: provide a visualization of pi1/pi0 for each dimension, to visualize the amount of information carried by each dimension
+    # fix it: there is a conflict between qt_norm and discrete feature
 """
-def feature_explore():
-    pass 
-
-def PrimFDR_v2(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
-    np.random.seed(42)
-    x = x_prep(x)
-    if verbose:
-        print('## ML initialization starts ##')   
-    
-    ## extract the null and the alternative proportion
-    beta   = -ML_slope(p)
-    _,t_BH = bh(p,alpha=alpha)
-    x_alt  = x[p<t_BH]
-    x_null = x[p>0.5]
-    
-    ## fit the alternative distribution
-    w_null,a_null,mu_null,sigma_null = mixutre_fit(x_null,K,n_itr=n_itr,verbose=verbose)   
-    w_alt, a_alt, mu_alt, sigma_alt  = mixutre_fit(x_alt,K,n_itr=n_itr,verbose=verbose) 
-    if verbose:
-        print('## Learned parameters for null population ##')
-        print('Slope: w=%s, a=%s'%(str(w_null[0]),str(a_null)))
-        for k in range(K):
-            print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w_null[k+1]),mu_null[k],sigma_null[k]))
-        print('\n')
-        
-    
-    if verbose:
-        print('## Learned parameters for alternative population ##')
-        print('Slope: w=%s, a=%s'%(str(w_alt[0]),str(a_alt)))
-        for k in range(K):
-            print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w_alt[k+1]),mu_alt[k],sigma_alt[k]))
-        print('\n')
-    
-    if verbose:
-        #print('## Learned parameters ##')
-        #print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
-        #for k in range(K):
-        #    print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
-        #print('\n')
-        
-        pi_null = w_null[0]*f_slope(x,a_null)
-        for k in range(K):
-            pi_null += w_null[k+1]*f_bump(x,mu_null[k],sigma_null[k])
+def feature_explore(p,x,alpha=0.1,qt_norm=False,reorder=True,feature_name=[],cate_name=None):
+    def feature_explore_1d(x_null,x_alt,bins,meta_info,title='',cate_name=None):
+        feature_type,cate_code = meta_info        
+        if feature_type == 'continuous':         
+            ## continuous feature: using kde to estimate 
+            n_bin = bins.shape[0]-1
+            x_grid = (bins+(bins[1]-bins[0])/2)[0:-1]
+            p_null,_ = np.histogram(x_null,bins=bins) 
+            p_alt,_= np.histogram(x_alt,bins=bins)         
+            p_null = (p_null+1)/np.sum(p_null+1)*n_bin
+            p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin
+            kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
+            kde_alt = stats.gaussian_kde(x_alt).evaluate(x_grid)
+            p_ratio = (kde_alt+1e-2)/(kde_null+1e-2)        
+                 
+        else: 
+            ## discrete feature: directly use the empirical counts 
+            unique_null,cts_null = np.unique(x_null,return_counts=True)
+            unique_alt,cts_alt = np.unique(x_alt,return_counts=True)            
+            unique_val = np.array(list(set(list(unique_null)+list(unique_alt))))
+            unique_val = np.sort(unique_val)            
+            p_null,p_alt = np.zeros([unique_val.shape[0]]),np.zeros([unique_val.shape[0]])          
+            for i,key in enumerate(unique_null): p_null[unique_val==key] = cts_null[i]                
+            for i,key in enumerate(unique_alt): p_alt[unique_val==key] = cts_alt[i]           
+            n_bin = unique_val.shape[0]           
+            p_null = (p_null+1)/np.sum(p_null+1)*n_bin
+            p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
+            p_ratio = (p_alt+1e-2)/(p_null+1e-2)  
+            x_grid = unique_val
             
-        pi_alt = w_alt[0]*f_slope(x,a_alt)
-        for k in range(K):
-            pi_alt += w_alt[k+1]*f_bump(x,mu_alt[k],sigma_alt[k])
-        
-        if len(x.shape)==1:
-            x_idx = x.argsort()
-            plt.figure(figsize=[18,5])
-            plt.plot(x[x_idx],pi_null[x_idx],label='null')
-            plt.plot(x[x_idx],pi_alt[x_idx],label='alt')
-            plt.plot(x[x_idx],(pi_alt[x_idx]+1e-5)/(pi_null[x_idx]+1e-5),label='ratio')
-            
-            bins=np.linspace(0,1,101)
-            p_alt,_= np.histogram(x_alt,bins=bins)
-            p_alt = p_alt/x_alt.shape[0]
-            p_null,_ = np.histogram(x_null,bins=bins)    
-            p_null = p_null/x_null.shape[0]
-            plt.plot(bins[0:-1],p_alt/p_null,label='true_ratio')
-            plt.legend()
-            plt.show()
-            
-        
-        #t = 1/beta*np.log((t_alt+0.00001)/(t_null+0.00001))
-        #t-=t.min()
-        #t = 1/100*np.log((t_alt+0.001)/(t_null+0.001))      
-        t = (pi_alt+1e-5)/(pi_null+1e-5)
-        #t = np.log((pi_alt+pi_null)/(pi_null))
-               
-        gamma = rescale_mirror(t,p,alpha)   
-        t *= gamma
-        result_summary(p<t,h) 
-        
-        d=1 if len(x.shape)==1 else x.shape[1]
-        rand_idx = p<2*t.max()
-        x = x[rand_idx] if d==1 else x[rand_idx,:]
-        p = p[rand_idx]
-        t = t[rand_idx]
-        if h is not None: h = h[rand_idx]
-        rand_idx=np.random.permutation(x.shape[0])[0:min(10000,x.shape[0])]
-        x = x[rand_idx] if d==1 else x[rand_idx,:]
-        p = p[rand_idx]
-        t = t[rand_idx]
-        if h is not None: h = h[rand_idx]
-        
-        if d==1: 
-            sort_idx=x.argsort()
-            plt.figure(figsize=[18,5])
-            if h is None:
-                plt.scatter(x,p,alpha=0.1)
+            if cate_name is None: 
+                cate_name_ = cate_code
             else:
-                plt.scatter(x[h==0],p[h==0],alpha=0.1,color='royalblue')
-                plt.scatter(x[h==1],p[h==1],alpha=0.1,color='orange')
-            plt.plot(x[sort_idx],t[sort_idx],color='lime')
-            plt.ylim([t.min()-1e-4,2*t.max()])
-            plt.show()
-        elif d<=3:
-            plt.figure(figsize=[18,5])
-            for i in range(d):
-                plt.subplot('1'+str(d)+str(i+1))
-                sort_idx=x[:,i].argsort()
-                if h is None:
-                    plt.scatter(x[:,i],p,alpha=0.1)
-                else:
-                    plt.scatter(x[:,i][h==0],p[h==0],alpha=0.1,color='royalblue')
-                    plt.scatter(x[:,i][h==1],p[h==1],alpha=0.1,color='orange')
-                plt.scatter(x[:,i][sort_idx],t[sort_idx],s=4,alpha=0.2,color='lime')
-                plt.ylim([t.min()-1e-4,2*t.max()])
-            plt.show()
-
-    #return w,a,mu,sigma    
+                cate_name_ = []
+                for i in cate_code:
+                    cate_name_.append(cate_name[i])
+                    
+        plt.figure(figsize=[18,5])
+        plt.subplot(121)
+        plt.bar(x_grid,p_null,width=1/n_bin,color='royalblue',alpha=0.6,label='null')
+        plt.bar(x_grid,p_alt,width=1/n_bin,color='darkorange',alpha=0.6,label='alt')
+        plt.xlim([0,1])
+        if feature_type=='discrete': plt.xticks(x_grid,cate_name_,rotation=45)
+        plt.title('estimated null/alt proportion')
+        plt.legend()
+        plt.subplot(122)
+        if feature_type == 'continuous':
+            plt.plot(x_grid,p_ratio,color='seagreen',label='ratio',linewidth=4) 
+        else:
+            plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
+            plt.xticks(x_grid,cate_name_,rotation=45)
+        plt.xlim([0,1])
+        plt.title('ratio')
+        plt.suptitle(title+' (%s)'%feature_type)
+        plt.show()
+    
+    
+    d=1 if len(x.shape)==1 else x.shape[1]
+    ## preprocessing
+    x,meta_feature = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)   
+    
+    ## separate the null proportion and the alternative proportion
+    _,t_BH = bh(p,alpha=alpha)
+    x_null,x_alt = x[p>0.5],x[p<t_BH]      
+    
+    ## generate the figure
+    bins = np.linspace(0,1,51)
+    if len(feature_name) == 0:
+        for i in range(d): feature_name.append('feature %s'%str(i+1))
+    if cate_name is None: cate_name = [None]*d        
+    if d==1:       
+        feature_explore_1d(x_null,x_alt,bins,meta_feature[0],title=feature_name[0],cate_name=cate_name[0])
+    else:
+        for i in range(min(4,d)):
+            feature_explore_1d(x_null[:,i],x_alt[:,i],bins,meta_feature[i],title=feature_name[i],cate_name=cate_name[i])     
 
 """
     PrimFDR: the main testing function 
     fix: add the cross validation wrapper     
 """
 
-def pfdr_test(data):    
+def pfdr_test(data):  
+    print('pfdr_test start')
     p1,x1 = data[0]
     p2,x2 = data[1]
     p3,x3 = data[2]
     K,alpha,n_itr = data[3]
+    print('PrimFDR start')
     _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=False)
     a,b,w,mu,sigma,gamma = theta
     
     t2 = t_cal(x2,a,b,w,mu,sigma)
-    gamma = rescale_mirror(t2,p2,alpha,verbose=False)
+    gamma = rescale_mirror(t2,p2,alpha)
     t3 = gamma*t_cal(x3,a,b,w,mu,sigma)
     
     return np.sum(p3<t3),t3,[a,b,w,mu,sigma,gamma]
         
-def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
+def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,core='s_core',verbose=False):
     np.random.seed(42)
     color_list = ['navy','orange','darkred']
-    x = x_prep(x)
+    x,_ = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)
     n_sample = p.shape[0]
     n_sub = int(n_sample/3)
     d = 1 if len(x.shape)==1 else x.shape[1]
@@ -200,16 +210,18 @@ def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
     Y_input.append([data[0],data[1],data[2],args])
     if verbose: print('#time input: %0.4fs'%(time.time()-start_time))
     
+    if core == 'm_core':
     ## multi-processing
-    #pool = Pool(3)
-    #res  = pool.map(pfdr_test, Y_input)
-    #if verbose: print('#time mp: %0.4fs'%(time.time()-start_time))
+        pool = Pool(3)
+        res  = pool.map(pfdr_test, Y_input)
+        if verbose: print('#time mp: %0.4fs'%(time.time()-start_time))
         
     ## single core 
-    res=[]
-    for i in range(3):
-        if verbose: print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-        res.append(pfdr_test(Y_input[i]))
+    else:
+        res=[]
+        for i in range(3):
+            if verbose: print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+            res.append(pfdr_test(Y_input[i]))
         
     if verbose: print('#time test: %0.4fs'%(time.time()-start_time))
         
@@ -224,23 +236,23 @@ def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
     
     if verbose:
         print('# total rejection: %d'%np.array(n_rej).sum(), n_rej)
-        
-        plt.figure(figsize=[18,5])
+            
         if d==1:
+            plt.figure(figsize=[18,5])
             for i in range(3):
                 plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label='fold '+str(i+1))
                 #plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label=None)
-        plt.legend()
-        plt.show()
+            plt.legend()
+            plt.show()
         print('#time total: %0.4fs'%(time.time()-start_time))     
     
     return n_rej,t,theta    
 
-def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):   
+def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,verbose=False,debug=''):   
     ## feature preprocessing 
     torch.manual_seed(42)
     d=1 if len(x.shape)==1 else x.shape[1]
-    x = x_prep(x)
+    x,_ = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)
     
     # rough threshold calculation using PrimFDR_init 
     w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose) 
@@ -267,12 +279,15 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
     lambda0,lambda1 = int(lambda0),int(lambda1)
     loss_rec = np.zeros([n_itr],dtype=float)
     n_samp   = x.shape[0]
-    
     if verbose: 
         print('## optimization paramter:')
         print('# n_itr=%s, n_samp=%s, lambda0=%s, lambda1=%s\n'%(str(n_itr),str(n_samp),str(lambda0),str(lambda1)))
            
     ## optimization: initialization  
+    # fix it: maybe we should use scipy to optimize
+    
+    #a,b,w,mu,sigma = PrimFDR_optimize([a,b,w,mu,sigma],lambda0,lambda1,x,p)
+    
     lambda0 = Variable(torch.Tensor([lambda0]),requires_grad=False)
     lambda1 = Variable(torch.Tensor([lambda1]),requires_grad=False)
     p       = Variable(torch.from_numpy(p).float(),requires_grad=False)
@@ -292,7 +307,6 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
         
     optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.005)
     optimizer.zero_grad()
-    
     for l in range(n_itr):
         ## calculating the model
         optimizer.zero_grad()
@@ -316,7 +330,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
         loss_rec[l] = loss.data.numpy()
         
         if verbose:
-            if l%(int(n_itr)/5)==0:
+            if l%(int(n_itr)/20)==0:
                 print('## iteration %s'%str(l))    
                 print('n_rej: ',np.sum(t.data.numpy()>p.data.numpy()))
                 print('n_rej sig: ',np.sum(sigmoid(lambda0.data.numpy()*(t.data.numpy()-p.data.numpy()))))
@@ -334,31 +348,45 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,h=None,verbose=False):
                     plot_t(t.data.numpy(),p.data.numpy(),x.data.numpy(),h)
                     plt.show()
                 print('\n')
-    
     if verbose:
         plt.figure()
         plt.plot(np.log(loss_rec-loss_rec.min()+1e-3))
-        plt.show()
-        
+        plt.show()        
         
     p = p.data.numpy()
     x = x.data.numpy()
     
     a,b,w,mu,sigma = a.data.numpy(),b.data.numpy(),w.data.numpy(),mu.data.numpy(),sigma.data.numpy()
+    
+    
     t = t_cal(x,a,b,w,mu,sigma)
     gamma = rescale_mirror(t,p,alpha)   
     t *= gamma
     n_rej=np.sum(p<t)     
     if verbose: result_summary(p<t,h)
-    
     theta = [a,b,w,mu,sigma,gamma]
     return n_rej,t,theta
+
+"""
+    optimization using scipy
+"""
+#def PrimFDR_optimize(theta,lambda0,lambda1,x,p): 
+#    res = sp.optimize.minimize(f_opt,theta,args=(lambda0,lambda1,x,p),jac=False,options={'disp': True})
+#    return res.theta
+#
+#def f_opt(theta,lambda0,lambda1,x,p):
+#    a,b,w,mu,sigma = theta
+#    t = t_cal(x,a,b,w,mu,sigma)
+#    loss1 = -(sigmoid(lambda0*(t-p))).mean()
+#    loss2 = lambda1*(np.mean(sigmoid(lambda0*(t+p-1)))-0.1*np.mean(sigmoid(lambda0*(t-p)))).clip(min=0)
+#    loss = loss1+loss2
+#    return loss
 
 """
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
 def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
-    x = x_prep(x)
+    #x = x_prep(x,p)## fix it: multiple places used this function
     np.random.seed(42)
     if verbose: print('## PrimFDR_init starts')   
             
@@ -369,8 +397,10 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
     ## fit the null distribution
     if verbose: print('# Learning null distribution')
     w_null,a_null,mu_null,sigma_null = mixutre_fit(x_null,K,n_itr=n_itr,verbose=verbose)   
+    
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
+    
     if verbose: print('# Learning alternative distribution')
     w,a,mu,sigma = mixutre_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose)
     
@@ -397,7 +427,9 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
         
     ## initialization
     GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(np.reshape(x,[n_samp,d]))
-    w,w_old  = np.ones([K+1])/(K+1),np.zeros([K+1])
+    #w,w_old  = np.ones([K+1])/(K+1),np.zeros([K+1])
+    w,w_old  = 0.5*np.ones([K+1])/K,np.zeros([K+1])
+    w[0] = 0.5
     a        = ML_slope(x,x_w)   
     mu,sigma = GMM.means_,GMM.covariances_**0.5
     w_samp   = np.zeros([K+1,n_samp],dtype=float)
@@ -435,11 +467,12 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
 
     if i >= n_itr and verbose: print('!!! the model does not converge !!!')      
     
-    if d==1 and verbose:
+    if verbose: 
         print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
         for k in range(K):
             print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
         print('\n')
+    if d==1 and verbose:        
         plt.figure(figsize=[18,5])
         plt.subplot(121)
         temp_hist,_,_=plt.hist(x,bins=50,weights=1/n_samp*50*np.ones([n_samp]))

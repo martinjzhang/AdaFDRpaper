@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 """
     calculate the dimension-wise rank statistics
+    # fix it: for discrete features, it may be nice to keep their values the same
 """
 def rank(x):
     ranks = np.empty_like(x)
@@ -20,21 +21,28 @@ def rank(x):
 """
     rescale to have the mirror estimate below level alpha
 """
-def rescale_mirror(t,p,alpha,verbose=False):
+def rescale_mirror(t,p,alpha):
+    t_999 = np.percentile(t,99.9)
+    if t.clip(max=t_999).mean()>0.2:
+        gamma1 = 0.2/t.clip(max=np.percentile(t,99.9)).mean()
+    else: 
+        gamma1=1
+    t = t*gamma1
+    
+    print('gamma1',gamma1)
     gamma_l = 0
-    #gamma_u = 1/np.mean(t)
-    gamma_u = 1/np.max(t)*(p[p<0.5].max())
+    gamma_u = 0.2/np.mean(t)
     gamma_m = (gamma_u+gamma_l)/2
-
+    
     while gamma_u-gamma_l>1e-8 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
         gamma_m = (gamma_l+gamma_u)/2
-        #print(gamma_l,gamma_u,(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
+        print(gamma_l,gamma_u,np.sum(p<t*gamma_m),np.sum(p>1-t*gamma_m),(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
         if (np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m) < alpha:
             gamma_l = gamma_m
         else: 
             gamma_u = gamma_m
             
-    return (gamma_u+gamma_l)/2  
+    return (gamma_u+gamma_l)/2*gamma1 
 
 """
     rescale to have the mean-t estimate below level alpha 
@@ -70,7 +78,7 @@ def t_cal(x,a,b,w,mu,sigma):
             t += np.exp(w[i])*np.exp(-(x-mu[i])**2/sigma[i])
         else:
             t += np.exp(w[i])*np.exp(-np.sum((x-mu[i])**2/sigma[i],axis=1))
-    return t
+    return t.clip(max=1)
     
 """ 
     summary the result based on the predicted value and the true value 
