@@ -330,7 +330,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,verbos
         loss_rec[l] = loss.data.numpy()
         
         if verbose:
-            if l%(int(n_itr)/20)==0:
+            if l%(int(n_itr)/100)==0:
                 print('## iteration %s'%str(l))    
                 print('n_rej: ',np.sum(t.data.numpy()>p.data.numpy()))
                 print('n_rej sig: ',np.sum(sigmoid(lambda0.data.numpy()*(t.data.numpy()-p.data.numpy()))))
