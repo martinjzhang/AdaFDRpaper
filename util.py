@@ -2,21 +2,40 @@ import numpy as np
 import scipy as sp
 from scipy import stats
 import matplotlib.pyplot as plt
+from scipy.stats import rankdata
 
 """
     calculate the dimension-wise rank statistics
     # fix it: for discrete features, it may be nice to keep their values the same
 """
-def rank(x):
+def rank(x,continue_rank=True):
     ranks = np.empty_like(x)
     if len(x.shape)==1:
-        temp = x.argsort(axis=0)       
-        ranks[temp] = np.arange(x.shape[0])
+        if continue_rank:
+            temp = x.argsort(axis=0)       
+            ranks[temp] = np.arange(x.shape[0])
+        else:
+            ranks = rankdata(x)
+            
     else:
         for i in range(x.shape[1]):
-            temp = x[:,i].argsort(axis=0)       
-            ranks[temp,i] = np.arange(x.shape[0])
+            if continue_rank:           
+                temp = x[:,i].argsort(axis=0)       
+                ranks[temp,i] = np.arange(x.shape[0])
+            else:
+                ranks[:,i] = rankdata(x[:,i])
     return ranks
+
+
+#"""
+#    tell if a feature is discrete or continuous 
+#    return: a np_array boolean with dimension d
+#            1: discrete, 0: continuous
+#"""
+#def if_discrete(x):
+#    d=1 if len(x.shape)==1 else x.shape[1]
+#    feature_type = np.zeros([d],dtype=bool)
+#    if d==1:    
 
 """
     rescale to have the mirror estimate below level alpha
@@ -29,14 +48,14 @@ def rescale_mirror(t,p,alpha):
         gamma1=1
     t = t*gamma1
     
-    print('gamma1',gamma1)
+    #print('gamma1',gamma1)
     gamma_l = 0
     gamma_u = 0.2/np.mean(t)
     gamma_m = (gamma_u+gamma_l)/2
     
     while gamma_u-gamma_l>1e-8 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
         gamma_m = (gamma_l+gamma_u)/2
-        print(gamma_l,gamma_u,np.sum(p<t*gamma_m),np.sum(p>1-t*gamma_m),(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
+        #print(gamma_l,gamma_u,np.sum(p<t*gamma_m),np.sum(p>1-t*gamma_m),(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
         if (np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m) < alpha:
             gamma_l = gamma_m
         else: 
@@ -101,13 +120,13 @@ def result_summary(pred,h):
 """
     basic functions for visualization
 """ 
-def plot_x(x,x_dim=None):
+def plot_x(x,vis_dim=None):
     if len(x.shape)==1:
         plt.hist(x,bins=50)
     else:
-        if x_dim is None: x_dim = np.arange(x.shape[1])            
-        for i,i_dim in enumerate(x_dim):
-            plt.subplot('1'+str(len(x_dim))+str(i+1))
+        if vis_dim is None: vis_dim = np.arange(x.shape[1])            
+        for i,i_dim in enumerate(vis_dim):
+            plt.subplot('1'+str(len(vis_dim))+str(i+1))
             plt.hist(x[:,i_dim],bins=50)
             plt.title('dimension %s'%str(i_dim+1))   
     
