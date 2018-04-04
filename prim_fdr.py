@@ -294,7 +294,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     lambda0,n_rej,n_fd = 1/t.mean(),np.sum(p<t),np.sum(p>1-t)
     while np.absolute(np.sum(sigmoid((lambda0*(t-p))))-n_rej)>0.02*n_rej or np.absolute(np.sum(sigmoid((lambda0*(t+p-1))))-n_fd)>0.02*n_fd:
         lambda0 = lambda0+0.5/t.mean()
-    lambda1  = 10/alpha
+    lambda1  = 10/alpha # 100
     lambda0,lambda1 = int(lambda0),int(lambda1)
     loss_rec = np.zeros([n_itr],dtype=float)
     n_samp   = x.shape[0]
@@ -326,6 +326,8 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         
     optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.005)
     optimizer.zero_grad()
+    
+    ## fix it: tune lambda1 to balance the gradient of the two losses
     for l in range(n_itr):
         ## calculating the model
         optimizer.zero_grad()
