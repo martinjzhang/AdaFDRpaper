@@ -4,6 +4,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from util import *
 from matplotlib import mlab
+from prim_fdr import * 
 
 
 ## generating the 1d toy example
@@ -52,6 +53,41 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
             plt.legend()
             plt.show() 
         return p,x,h
+    
+## toy data to testing mixture_fit
+def load_toy_mixture(opt=0):
+    def grid_2d():
+        grid = np.linspace(0,1,101)
+        x,y  = np.meshgrid(grid,grid)
+        x    = x.flatten()
+        y    = y.flatten()
+        n_g  = x.shape[0]
+        x    = np.concatenate([x.reshape((n_g,1)),y.reshape((n_g,1))],axis=1)
+        return x,n_g
+    if opt==0: # 2d slope, generated according to the slope model
+        a    = np.array([2,0],dtype=float)
+        print('slope parameter a = ',a) 
+        x,ng = grid_2d()
+        p    = f_slope(x,a)
+        p   /= p.sum()
+        sample = np.random.choice(np.arange(ng),size=10000,p=p)
+        sample = x[sample,:]
+        return sample
+    elif opt==1: # 2d bump, generated according to the exact model   
+        mu = np.array([0.5,0.2],dtype=float)
+        sigma = np.array([0.1,0.5],dtype=float)
+        print('bump parameter mu = ',mu) 
+        print('slope parameter sigma = ',sigma) 
+        x,ng = grid_2d()
+        p    = f_bump(x,mu,sigma)
+        p   /= p.sum()
+        sample = np.random.choice(np.arange(ng),size=10000,p=p)
+        sample = x[sample,:]
+        return sample
+    elif opt==2: # 2d slope+bump  
+        pass
+    else:
+        pass
     
 ## neuralFDR simulated examples    
 def neuralfdr_generate_data_1D(job=0, n_samples=10000,data_vis=0, num_case=4):

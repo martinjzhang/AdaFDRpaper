@@ -6,66 +6,74 @@ import torch
 from torch.autograd import Variable
 from util import *
 from multiprocessing import Pool
-
 #from torch.multiprocessing import Pool
 
 """ 
     preprocessing: standardize the hypothesis features 
-    x_: np_array, the covariates data.
-    qt_norm: bool, if perform quantile normalization.
-    x_dim: list, the dimensions to visualize. counting starts from 0
     
-    fix: sorting for discrete features
+    ----- input  -----
+    x_: np_array, the hypothesis features.
+    qt_norm: bool, if perform quantile normalization.
+    return_metainfo: bool, if return the meta information regarding the features
+    vis_dim: list, the dimensions to visualize. counting starts from 0, needed only when verbose is True
+    verbose: bool, if generate ancillary information
+    
+    ----- output -----
+    
 """ 
 
-def x_prep(x_,p,qt_norm=True,reorder=True,x_dim=None,verbose=False):
-    def meta_cal(x,p,reorder=True):
-        feature_type = 'discrete' if np.unique(x).shape[0]<100 else 'continuous'
-        if feature_type=='discrete':
-            ## separate the null and the alt proportion
-            _,t_BH = bh(p,alpha=0.1)
-            x_null,x_alt = x[p>0.5],x[p<t_BH]  
-            x_val = np.unique(x)
+def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=False,vis_dim=None,verbose=False):
+    def cal_meta_info(x,p):
+        if np.unique(x).shape[0]<100:
+            x_new,x_order_new = reorder_discrete_feature(x,p) 
+            return x_new,['discrete',x_order_new]
+        else: 
+            return x,['continuous',None]  
+        
+    def reorder_discrete_feature(x,p):
+        ## separate the null and the alt proportion
+        _,t_BH = bh(p,alpha=0.1)
+        x_null,x_alt = x[p>0.5],x[p<t_BH]  
+        x_val = np.unique(x)
+
+        ## calculate the ratio
+        cts_null = np.zeros([x_val.shape[0]],dtype=int)
+        cts_alt  = np.zeros([x_val.shape[0]],dtype=int)
+        for i,val in enumerate(x_val):
+            cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
+        p_null  = (cts_null+1)/np.sum(cts_null+1)
+        p_alt   = (cts_alt+1)/np.sum(cts_alt+1)      
+        p_ratio = p_alt/p_null 
             
-            ## calculate the ratio
-            cts_null = np.zeros([x_val.shape[0]],dtype=int)
-            cts_alt = np.zeros([x_val.shape[0]],dtype=int)
-            for i,val in enumerate(x_val):
-                cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
-            p_null = (cts_null+1)/np.sum(cts_null+1)
-            p_alt = (cts_alt+1)/np.sum(cts_alt+1)      
-            p_ratio = p_alt/p_null 
-            
-            ## resort according to the ratio
-            idx_sort = p_ratio.argsort()
-            x_new = np.copy(x)
-            x_val_new=[]
-            for i in range(x_val.shape[0]):
-                x_new[x==x_val[idx_sort[i]]] = x_val[i]   
-                x_val_new.append(x_val[idx_sort[i]])              
-            return x_new,[feature_type,x_val_new]
-        else:
-            return x,[feature_type,None]            
+        ## resort according to the ratio
+        idx_sort    = p_ratio.argsort()
+        x_new       = np.copy(x)
+        x_order_new = []
+        for i in range(x_val.shape[0]):
+            x_new[x==x_val[idx_sort[i]]] = x_val[i]   
+            x_order_new.append(idx_sort[i])
+        return x_new,x_order_new
     
     x = x_.copy()
-    d=1 if len(x.shape)==1 else x.shape[1]
-    meta_feature = []
+    d=1 if len(x.shape)==1 else x.shape[1]   
+        
+    ## feature visualization before preprocessing
     if verbose:
         plt.figure(figsize=[18,5])
-        plt.suptitle('before x_prep')
-        plot_x(x,x_dim=x_dim)       
+        plt.suptitle('before feature_preprocess')
+        plot_x(x,vis_dim=vis_dim)       
         plt.show()                
     
     ## preprocesing
-    # reorder the discrete features 
-    if reorder: 
-        if d==1:
-            x,temp_meta = meta_cal(x,p,reorder)
-            meta_feature.append(temp_meta)
-        else:
-            for i in range(d):
-                x[:,i],temp_meta = meta_cal(x[:,i],p,reorder)
-                meta_feature.append(temp_meta)
+    # reorder the discrete features as well as calculating the meta information
+    meta_info = []
+    if d==1:
+        x,temp_meta = cal_meta_info(x,p)
+        meta_info.append(temp_meta)
+    else:
+        for i in range(d):
+            x[:,i],temp_meta = cal_meta_info(x[:,i],p)
+            meta_info.append(temp_meta)
         
     # quantile normalization
     if qt_norm: x=rank(x)
@@ -75,19 +83,24 @@ def x_prep(x_,p,qt_norm=True,reorder=True,x_dim=None,verbose=False):
     
     if verbose:
         plt.figure(figsize=[18,5])
-        plt.suptitle('after x_prep')
-        plot_x(x,x_dim=x_dim) 
+        plt.suptitle('after feature_preprocess')
+        plot_x(x,vis_dim=vis_dim) 
         plt.show()
-        
-    return x,meta_feature
-
+    
+    if return_metainfo:
+        return x,meta_info
+    else:
+        return x
 """ 
     feature_explore: provide a visualization of pi1/pi0 for each dimension, to visualize the amount of information carried by each dimension
-    # fix it: there is a conflict between qt_norm and discrete feature
+    ----- input  -----
+    
+    ----- output -----
+    
 """
-def feature_explore(p,x,alpha=0.1,qt_norm=False,reorder=True,feature_name=[],cate_name=None):
-    def feature_explore_1d(x_null,x_alt,bins,meta_info,title='',cate_name=None):
-        feature_type,cate_code = meta_info        
+def feature_explore(p,x,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
+    def plot_feature_1d(x_null,x_alt,bins,meta_info,title='',cate_name=None):
+        feature_type,cate_order = meta_info        
         if feature_type == 'continuous':         
             ## continuous feature: using kde to estimate 
             n_bin = bins.shape[0]-1
@@ -113,13 +126,13 @@ def feature_explore(p,x,alpha=0.1,qt_norm=False,reorder=True,feature_name=[],cat
             p_null = (p_null+1)/np.sum(p_null+1)*n_bin
             p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
             p_ratio = (p_alt+1e-2)/(p_null+1e-2)  
-            x_grid = unique_val
+            x_grid = (np.arange(unique_val.shape[0])+1)/(unique_val.shape[0]+1)
             
             if cate_name is None: 
-                cate_name_ = cate_code
+                cate_name_ = cate_order
             else:
                 cate_name_ = []
-                for i in cate_code:
+                for i in cate_order:
                     cate_name_.append(cate_name[i])
                     
         plt.figure(figsize=[18,5])
@@ -144,23 +157,28 @@ def feature_explore(p,x,alpha=0.1,qt_norm=False,reorder=True,feature_name=[],cat
     
     d=1 if len(x.shape)==1 else x.shape[1]
     ## preprocessing
-    x,meta_feature = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)   
+    x,meta_info = feature_preprocess(x,p,qt_norm=qt_norm,continue_rank=False,return_metainfo=True)   
     
     ## separate the null proportion and the alternative proportion
     _,t_BH = bh(p,alpha=alpha)
     x_null,x_alt = x[p>0.5],x[p<t_BH]      
     
     ## generate the figure
-    bins = np.linspace(0,1,51)
-    if len(feature_name) == 0:
-        for i in range(d): feature_name.append('feature %s'%str(i+1))
-    if cate_name is None: cate_name = [None]*d        
+    bins = np.linspace(0,1,51)  
+    if vis_dim is None: vis_dim = np.arange(min(4,d))    
+    
     if d==1:       
-        feature_explore_1d(x_null,x_alt,bins,meta_feature[0],title=feature_name[0],cate_name=cate_name[0])
-    else:
-        for i in range(min(4,d)):
-            feature_explore_1d(x_null[:,i],x_alt[:,i],bins,meta_feature[i],title=feature_name[i],cate_name=cate_name[i])     
-
+        if 0 in cate_name.keys():
+            plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1',cate_name=cate_name[0])
+        else:
+            plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1')
+    else: 
+        for i in vis_dim:
+            if i in cate_name.keys():
+                plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
+            else:
+                plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1))
+       
 """
     PrimFDR: the main testing function 
     fix: add the cross validation wrapper     
@@ -181,11 +199,12 @@ def pfdr_test(data):
     t3 = gamma*t_cal(x3,a,b,w,mu,sigma)
     
     return np.sum(p3<t3),t3,[a,b,w,mu,sigma,gamma]
-        
+
+## fix it: change the wrapper to two-fold cv
 def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,core='s_core',verbose=False):
     np.random.seed(42)
     color_list = ['navy','orange','darkred']
-    x,_ = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)
+    x,_ = feature_preprocess(x,p,qt_norm=qt_norm,reorder=reorder)
     n_sample = p.shape[0]
     n_sub = int(n_sample/3)
     d = 1 if len(x.shape)==1 else x.shape[1]
@@ -248,11 +267,11 @@ def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,cor
     
     return n_rej,t,theta    
 
-def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,verbose=False,debug=''):   
+def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug=''):   
     ## feature preprocessing 
     torch.manual_seed(42)
     d=1 if len(x.shape)==1 else x.shape[1]
-    x,_ = x_prep(x,p,qt_norm=qt_norm,reorder=reorder)
+    x = feature_preprocess(x,p,qt_norm=qt_norm)
     
     # rough threshold calculation using PrimFDR_init 
     w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose) 
@@ -330,7 +349,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,verbos
         loss_rec[l] = loss.data.numpy()
         
         if verbose:
-            if l%(int(n_itr)/100)==0:
+            if l%(int(n_itr)/5)==0:
                 print('## iteration %s'%str(l))    
                 print('n_rej: ',np.sum(t.data.numpy()>p.data.numpy()))
                 print('n_rej sig: ',np.sum(sigmoid(lambda0.data.numpy()*(t.data.numpy()-p.data.numpy()))))
@@ -386,7 +405,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,verbos
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
 def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
-    #x = x_prep(x,p)## fix it: multiple places used this function
+    #x = feature_preprocess(x,p)## fix it: multiple places used this function
     np.random.seed(42)
     if verbose: print('## PrimFDR_init starts')   
             
@@ -429,7 +448,6 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
     GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(np.reshape(x,[n_samp,d]))
     #w,w_old  = np.ones([K+1])/(K+1),np.zeros([K+1])
     w,w_old  = 0.5*np.ones([K+1])/K,np.zeros([K+1])
-    w[0] = 0.5
     a        = ML_slope(x,x_w)   
     mu,sigma = GMM.means_,GMM.covariances_**0.5
     w_samp   = np.zeros([K+1,n_samp],dtype=float)
@@ -493,8 +511,8 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
     sub-routines for mixutre_fit
 """
 ## ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
-def ML_slope(x,w=None):
-    def ML_slope_1d(x,w=None):
+def ML_slope(x,w=None,c=0.01):
+    def ML_slope_1d(x,w=None,c=0.05):
         if w is None:
             w = np.ones(x.shape[0])        
         t = np.sum(w*x)/np.sum(w) ## sufficient statistic
@@ -504,38 +522,93 @@ def ML_slope(x,w=None):
         while a_u-a_l>0.1:
             a_m  = (a_u+a_l)/2
             a_m += 1e-2*(a_m==0)
-            if (np.log((np.exp(a_m)-1)/a_m)+0.05*a_m**2)/a_m<t:
-            #if (np.log((np.exp(a_m)-1)/a_m)+a_m**2)/a_m<t:
+            #if (np.log((np.exp(a_m)-1)/a_m)+0.05*a_m**2)/a_m<t: # this line seems to be wrong due to some uncareful calculation
+            if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t: # this is te corrected line 
                 a_l = a_m
             else: 
                 a_u = a_m
+        #print('c=%0.2f'%c)
         return (a_u+a_l)/2
     
     if len(x.shape)==1:
-        return ML_slope_1d(x,w)
+        return ML_slope_1d(x,w,c=c)
     else:
         a = np.zeros(x.shape[1],dtype=float)
         for i in range(x.shape[1]):
-            a[i] = ML_slope_1d(x[:,i],w)
+            a[i] = ML_slope_1d(x[:,i],w,c=c)
         return a
 
 ## slope density function
 def f_slope(x,a):
     if len(x.shape)==1: # 1d case 
-        return a/(np.exp(a)-1)*np.exp(a*x)
+        if a==0:
+            return np.exp(a*x)
+        else: 
+            return a/(np.exp(a)-1)*np.exp(a*x)
     else:
         f_x = np.ones([x.shape[0]],dtype=float)
         for i in range(x.shape[1]):
-            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
+            if a[i]==0:
+                f_x *= np.exp(a[i]*x[:,i])
+            else:
+                f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
         return f_x
 
 ## ML fit of the Gaussian, without finite interval correction
+# fix it: estimate the parameters using a truncated normal distribution
 def ML_bump(x,w=None):
     def ML_bump_1d(x,w=None):
         if w is None:
             w = np.ones(x.shape[0])
-        mu    = np.sum(x*w)/np.sum(w)
-        sigma = np.sqrt(np.sum((x-mu)**2*w)/np.sum(w))
+            
+        mean_ = np.sum(x*w)/np.sum(w)
+        var_  = np.sum((x-mean_)**2*w)/np.sum(w)
+        #print('mean_=%0.3f, var_=%0.3f'%(mean_,var_))
+        
+        ## estimation            
+        mu    = np.sum(x*w)/np.sum(w)    
+        sigma = np.sqrt(var_)
+        
+        #s_u = 2
+        #s_l = np.sqrt(var_)
+        #x_grid = np.linspace(0,1,101)
+        #while s_u-s_l>0.001:               
+        #    s_m  = (s_u+s_l)/2
+        #    p_ = f_bump(x_grid,mu,s_m)
+        #    p_/= p_.sum()
+        #    mean_sm = p_.dot(x_grid)
+        #    var_sm = p_.dot((x_grid-mean_sm)**2)
+        #    print(s_m,s_l,s_u,var_sm)
+        #    if var_sm < var_:
+        #        #if s_m-1+var_/s_m**2 > 0:
+        #        s_l = s_m
+        #    else:
+        #        s_u = s_m
+        #
+        #sigma = s_m
+            
+        
+        #print('var_=%0.3f'%var_)
+        ###  binary search for sigma
+        #if var_<0.01:
+        #    sigma = np.sqrt(var_)
+        #else:
+        #    print('var_=%0.3f'%var_)
+        #    s_u=2
+        #    s_l=0.1
+        #    while s_u-s_l>0.001:               
+        #        s_m  = (s_u+s_l)/2
+        #        print(s_m,s_l,s_u,s_m*f_logc_grad_cal(mu,s_m)[1]-1+var_/s_m**2)
+        #        if s_m*f_logc_grad_cal(mu,s_m)[1]-1+var_/s_m**2 > 0:
+        #        #if s_m-1+var_/s_m**2 > 0:
+        #            s_l = s_m
+        #        else:
+        #            s_u = s_m
+        #    sigma = s_m
+                
+        
+        
+        #sigma = np.sqrt(np.sum((x-mu)**2*w)/np.sum(w))
         return mu,sigma
     
     if len(x.shape)==1:
@@ -546,13 +619,26 @@ def ML_bump(x,w=None):
         for i in range(x.shape[1]):
             mu[i],sigma[i] = ML_bump_1d(x[:,i],w)
         return mu,sigma
+    
+def f_c_cal(mu,sigma):
+    c = 1/(1+np.exp(-1.65*(1-mu)/sigma)) - 1/(1+np.exp(1.65*mu/sigma))
+    return 1/c
+
+def f_logc_grad_cal(mu,sigma):
+    e_p = np.exp(1.65*mu/sigma)
+    e_n = np.exp(-1.65*(1-mu)/sigma)  
+    grad_mu = 1.65/sigma*( e_p/(1+e_p) + e_n/(1+e_n) -1)    
+    term1 = 1.65*mu/sigma**2*e_p*(1+e_n)/(1+e_p)/(e_p-e_n)
+    term2 = 1.65*(1-mu)/sigma**2*e_n*(1+e_p)/(1+e_n)/(e_p-e_n)
+    grad_sigma = term1+term2
+    return np.array([grad_mu,grad_sigma])
 
 ## bump density function
 def f_bump(x,mu,sigma):
     def f_bump_1d(x,mu,sigma): ## correct for the finite interval issue
         if sigma<1e-6: return np.zeros(x.shape)
         pmf = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
-        return 1/np.sqrt(2*np.pi*sigma**2)*np.exp(-(x-mu)**2/2/sigma**2)/pmf
+        return 1/sigma/np.sqrt(2*np.pi)*np.exp(-(x-mu)**2/2/sigma**2)/pmf
     
     if len(x.shape)==1:
         return f_bump_1d(x,mu,sigma)
@@ -616,7 +702,7 @@ def storey_bh(p,alpha=0.1,lamb=0.5,n_sample=None,verbose=False):
 """ 
 #def PrimFDR_v2(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
 #    np.random.seed(42)
-#    x = x_prep(x)
+#    x = feature_preprocess(x)
 #    if verbose:
 #        print('## ML initialization starts ##')   
 #    
