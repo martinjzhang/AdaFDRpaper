@@ -91,6 +91,7 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=Fals
         return x,meta_info
     else:
         return x
+    
 """ 
     feature_explore: provide a visualization of pi1/pi0 for each dimension, to visualize the amount of information carried by each dimension
     ----- input  -----
@@ -276,7 +277,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     # rough threshold calculation using PrimFDR_init 
     w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose) 
 
-    ## transforming the parameters
+    ## transform the parameters
     a     = a_init
     b     = np.log(w_init[0]*(a_init/(np.exp(a_init)-1)).prod())    
     w     = np.log(w_init[1:]/((2*np.pi)**(d/2)*sigma_init.prod(axis=1)))
@@ -302,11 +303,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         print('## optimization paramter:')
         print('# n_itr=%s, n_samp=%s, lambda0=%s, lambda1=%s\n'%(str(n_itr),str(n_samp),str(lambda0),str(lambda1)))
            
-    ## optimization: initialization  
-    # fix it: maybe we should use scipy to optimize
-    
-    #a,b,w,mu,sigma = PrimFDR_optimize([a,b,w,mu,sigma],lambda0,lambda1,x,p)
-    
+    ## optimization: initialization         
     lambda0 = Variable(torch.Tensor([lambda0]),requires_grad=False)
     lambda1 = Variable(torch.Tensor([lambda1]),requires_grad=False)
     p       = Variable(torch.from_numpy(p).float(),requires_grad=False)
@@ -417,13 +414,13 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
     
     ## fit the null distribution
     if verbose: print('# Learning null distribution')
-    w_null,a_null,mu_null,sigma_null = mixutre_fit(x_null,K,n_itr=n_itr,verbose=verbose)   
+    w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,verbose=verbose)   
     
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
     
     if verbose: print('# Learning alternative distribution')
-    w,a,mu,sigma = mixutre_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose)
+    w,a,mu,sigma = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose)
     
     if verbose:        
         t = f_all(x,a,mu,sigma,w)
@@ -439,29 +436,30 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
     return w,a,mu,sigma    
 
 """ 
-    mixutre_fit: fit a GLM+Gaussian mixture using EM algorithm
+    mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
 """
-def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):   
+def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):   
     d=1 if len(x.shape)==1 else x.shape[1]
     n_samp = x.shape[0]
     if x_w is None: x_w=np.ones([n_samp],dtype=float)
         
     ## initialization
-    GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(np.reshape(x,[n_samp,d]))
-    #w,w_old  = np.ones([K+1])/(K+1),np.zeros([K+1])
-    w,w_old  = 0.5*np.ones([K+1])/K,np.zeros([K+1])
+    GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(np.reshape(x,[n_samp,d])) # fixit: the weights x_w are gone?? 
+    w_old = np.zeros([K+1])
+    w = 0.5*np.ones([K+1])/K
+    w[0] = 0.5
     a        = ML_slope(x,x_w)   
     mu,sigma = GMM.means_,GMM.covariances_**0.5
     w_samp   = np.zeros([K+1,n_samp],dtype=float)
     i        = 0
         
-    #print('## initialization')
-    #print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
-    #for k in range(K):
-    #    print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
-    #print('\n')    
+    print('## initialization')
+    print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
+    for k in range(K):
+        print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
+    print('\n')    
     
-    while np.linalg.norm(w-w_old)>1e-3 and i<n_itr:        
+    while np.linalg.norm(w-w_old)>1e-3 and i<n_itr:       
         ## E step       
         w_old = w
         w_samp[0,:] = w[0]*f_slope(x,a)
@@ -477,13 +475,6 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
         sigma = sigma.clip(min=1e-4)
         w[w<1e-4] = 0
         i += 1
-
-        if i%10==0 and debug:
-            print('## iteration %s ##'%str(i))
-            print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
-            for k in range(K):
-                print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
-            print('\n')
 
     if i >= n_itr and verbose: print('!!! the model does not converge !!!')      
     
@@ -510,7 +501,7 @@ def mixutre_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
     return w,a,mu,sigma
 
 """
-    sub-routines for mixutre_fit
+    sub-routines for mixture_fit
 """
 ## ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
 def ML_slope(x,w=None,c=0.01):
@@ -524,12 +515,10 @@ def ML_slope(x,w=None,c=0.01):
         while a_u-a_l>0.1:
             a_m  = (a_u+a_l)/2
             a_m += 1e-2*(a_m==0)
-            #if (np.log((np.exp(a_m)-1)/a_m)+0.05*a_m**2)/a_m<t: # this line seems to be wrong due to some uncareful calculation
-            if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t: # this is te corrected line 
+            if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t:
                 a_l = a_m
             else: 
                 a_u = a_m
-        #print('c=%0.2f'%c)
         return (a_u+a_l)/2
     
     if len(x.shape)==1:
@@ -559,81 +548,105 @@ def f_slope(x,a):
 ## ML fit of the Gaussian, without finite interval correction
 # fix it: estimate the parameters using a truncated normal distribution
 def ML_bump(x,w=None):
-    def ML_bump_1d(x,w=None):
-        if w is None:
-            w = np.ones(x.shape[0])
-            
-        mean_ = np.sum(x*w)/np.sum(w)
-        var_  = np.sum((x-mean_)**2*w)/np.sum(w)
-        #print('mean_=%0.3f, var_=%0.3f'%(mean_,var_))
-        
-        ## estimation            
-        mu    = np.sum(x*w)/np.sum(w)    
-        sigma = np.sqrt(var_)
-        
-        #s_u = 2
-        #s_l = np.sqrt(var_)
-        #x_grid = np.linspace(0,1,101)
-        #while s_u-s_l>0.001:               
-        #    s_m  = (s_u+s_l)/2
-        #    p_ = f_bump(x_grid,mu,s_m)
-        #    p_/= p_.sum()
-        #    mean_sm = p_.dot(x_grid)
-        #    var_sm = p_.dot((x_grid-mean_sm)**2)
-        #    print(s_m,s_l,s_u,var_sm)
-        #    if var_sm < var_:
-        #        #if s_m-1+var_/s_m**2 > 0:
-        #        s_l = s_m
-        #    else:
-        #        s_u = s_m
-        #
-        #sigma = s_m
-            
-        
-        #print('var_=%0.3f'%var_)
-        ###  binary search for sigma
-        #if var_<0.01:
-        #    sigma = np.sqrt(var_)
-        #else:
-        #    print('var_=%0.3f'%var_)
-        #    s_u=2
-        #    s_l=0.1
-        #    while s_u-s_l>0.001:               
-        #        s_m  = (s_u+s_l)/2
-        #        print(s_m,s_l,s_u,s_m*f_logc_grad_cal(mu,s_m)[1]-1+var_/s_m**2)
-        #        if s_m*f_logc_grad_cal(mu,s_m)[1]-1+var_/s_m**2 > 0:
-        #        #if s_m-1+var_/s_m**2 > 0:
-        #            s_l = s_m
-        #        else:
-        #            s_u = s_m
-        #    sigma = s_m
-                
-        
-        
-        #sigma = np.sqrt(np.sum((x-mu)**2*w)/np.sum(w))
-        return mu,sigma
+    #def ML_bump_1d(x,w=None):            
+    #    mean_ = np.sum(x*w)/np.sum(w)
+    #    var_  = np.sum((x-mean_)**2*w)/np.sum(w)
+    #    
+    #    ## estimation            
+    #    mu    = mean_ 
+    #    sigma = np.sqrt(var_)     
+    #    return mu,sigma
     
+    def ML_bump_1d(x,w):
+        def fit_f(param,x,w):                
+            mu,sigma = param
+            Z = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
+            phi_alpha = 1/np.sqrt(2*np.pi)*np.exp(-mu**2/2/sigma**2)
+            phi_beta = 1/np.sqrt(2*np.pi)*np.exp(-(1-mu)**2/2/sigma**2)
+
+            ## average likelihood
+            t = np.sum((x-mu)**2*w) / np.sum(w)
+            l = -np.log(Z) - np.log(sigma) - t/2/sigma**2        
+            ## gradient    
+            d_c_mu = 1/sigma * (phi_alpha-phi_beta)
+            d_c_sig = 1/sigma * (-mu/sigma*phi_alpha - (1-mu)/sigma*phi_beta)
+            d_l_mu = -d_c_mu/Z + np.sum((x-mu)*w)/sigma**2/np.sum(w)
+            d_l_sig = -d_c_sig/Z - 1/sigma + t/sigma**3
+            grad = np.array([d_l_mu,d_l_sig],dtype=float)  
+            return l,grad
+
+        ##  if the variance is small, no need to fit a truncated Gaussian
+        mu,sigma = np.mean(x),np.std(x)
+        if sigma<0.1:
+            return mu,sigma
+
+        ## gradient check
+        param = np.array([np.mean(x),np.std(x)])    
+        lr = 0.01
+        max_step = 0.025
+        max_itr = 100
+        i_itr = 0
+        l_old = -10
+
+        while i_itr<max_itr:
+            l,grad = fit_f(param,x,w)
+            if np.absolute(l-l_old)<0.01:
+                break
+            else:
+                l_old=l
+            update = (grad*lr).clip(min=-max_step,max=max_step)
+            param += update
+            i_itr +=1     
+            if np.isnan(param).any():
+                return np.mean(x),np.std(x)
+        mu,sigma = param  
+        return mu,sigma  
+    
+    if w is None:
+        w = np.ones(x.shape[0])
+        
     if len(x.shape)==1:
         return ML_bump_1d(x,w)
     else:
+        
         mu    = np.zeros(x.shape[1],dtype=float)
         sigma = np.zeros(x.shape[1],dtype=float)
         for i in range(x.shape[1]):
+            #plt.figure(figsize=[12,5])
+            #plt.subplot(121)
+            #plt.hist(x[:,1],weights=w)
+            #plt.subplot(122)
+            #plt.hist(w)
+            #plt.show()
             mu[i],sigma[i] = ML_bump_1d(x[:,i],w)
         return mu,sigma
     
-def f_c_cal(mu,sigma):
-    c = 1/(1+np.exp(-1.65*(1-mu)/sigma)) - 1/(1+np.exp(1.65*mu/sigma))
-    return 1/c
-
-def f_logc_grad_cal(mu,sigma):
-    e_p = np.exp(1.65*mu/sigma)
-    e_n = np.exp(-1.65*(1-mu)/sigma)  
-    grad_mu = 1.65/sigma*( e_p/(1+e_p) + e_n/(1+e_n) -1)    
-    term1 = 1.65*mu/sigma**2*e_p*(1+e_n)/(1+e_p)/(e_p-e_n)
-    term2 = 1.65*(1-mu)/sigma**2*e_n*(1+e_p)/(1+e_n)/(e_p-e_n)
-    grad_sigma = term1+term2
-    return np.array([grad_mu,grad_sigma])
+## old code for ML_bump_1d
+    #def ML_bump_1d(x,w=None):
+    #    if w is None:
+    #        w = np.ones(x.shape[0])
+    #        
+    #    mean_ = np.sum(x*w)/np.sum(w)
+    #    var_  = np.sum((x-mean_)**2*w)/np.sum(w)
+    #    #print('mean_=%0.3f, var_=%0.3f'%(mean_,var_))
+    #    
+    #    ## estimation            
+    #    mu    = np.sum(x*w)/np.sum(w)    
+    #    sigma = np.sqrt(var_)     
+    #    return mu,sigma
+    
+#def f_c_cal(mu,sigma):
+#    c = 1/(1+np.exp(-1.65*(1-mu)/sigma)) - 1/(1+np.exp(1.65*mu/sigma))
+#    return 1/c
+#
+#def f_logc_grad_cal(mu,sigma):
+#    e_p = np.exp(1.65*mu/sigma)
+#    e_n = np.exp(-1.65*(1-mu)/sigma)  
+#    grad_mu = 1.65/sigma*( e_p/(1+e_p) + e_n/(1+e_n) -1)    
+#    term1 = 1.65*mu/sigma**2*e_p*(1+e_n)/(1+e_p)/(e_p-e_n)
+#    term2 = 1.65*(1-mu)/sigma**2*e_n*(1+e_p)/(1+e_n)/(e_p-e_n)
+#    grad_sigma = term1+term2
+#    return np.array([grad_mu,grad_sigma])
 
 ## bump density function
 def f_bump(x,mu,sigma):
@@ -715,8 +728,8 @@ def storey_bh(p,alpha=0.1,lamb=0.5,n_sample=None,verbose=False):
 #    x_null = x[p>0.5]
 #    
 #    ## fit the alternative distribution
-#    w_null,a_null,mu_null,sigma_null = mixutre_fit(x_null,K,verbose=verbose)   
-#    w_alt, a_alt, mu_alt, sigma_alt  = mixutre_fit(x_alt,K,verbose=verbose) 
+#    w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,verbose=verbose)   
+#    w_alt, a_alt, mu_alt, sigma_alt  = mixture_fit(x_alt,K,verbose=verbose) 
 #    if verbose:
 #        print('## Learned parameters for null population ##')
 #        print('Slope: w=%s, a=%s'%(str(w_null[0]),str(a_null)))
