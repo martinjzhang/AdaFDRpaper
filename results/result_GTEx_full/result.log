@@ -1,0 +1,7 @@
+benchmark_Gtex_full:: ## BH, n_rej=29348, t_rej=0.00028
+benchmark_Gtex_full:: ## SBH, n_rej=29689, t_rej=0.00029
+prim_fdr:: ## PrimFDR_init starts
+prim_fdr:: # Learning null distribution
+font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+prim_fdr:: # Learning alternative distribution

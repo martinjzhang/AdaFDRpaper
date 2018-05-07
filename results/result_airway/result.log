@@ -1,0 +1,39 @@
+benchmark_airway:: ## BH, n_rej=4079, t_rej=0.01218
+benchmark_airway:: ## SBH, n_rej=4079, t_rej=0.01218
+prim_fdr:: ## PrimFDR_init starts
+prim_fdr:: # Learning null distribution
+font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+prim_fdr:: # Learning alternative distribution
+prim_fdr:: # Test result with PrimFDR_init
+util:: # n_rej=6022
+prim_fdr:: ## PrimFDR_init finishes
+
+prim_fdr:: ## optimization paramter:
+prim_fdr:: # n_itr=5000, n_samp=33469, lambda0=652, lambda1=100
+
+prim_fdr:: ## optimization initialization:
+prim_fdr:: # Slope: a=[4.3552685], b=[-8.996582]
+prim_fdr:: # Bump 0: w=-1.771598, mu=[0.8083073], sigma=[0.00426941]
+prim_fdr:: # Bump 1: w=-1.4213667, mu=[0.9060871], sigma=[0.00222839]
+prim_fdr:: # Bump 2: w=-3.3856575, mu=[0.6101719], sigma=[0.00905106]
+prim_fdr:: # Bump 3: w=-0.9614601, mu=[0.971218], sigma=[0.00068252]
+prim_fdr:: # Bump 4: w=-2.2571068, mu=[0.6925652], sigma=[0.00509282]
+prim_fdr:: 
+
+prim_fdr:: ## iteration 0
+prim_fdr:: n_rej: 7298
+prim_fdr:: n_rej sig: 7295
+prim_fdr:: FD esti mirror: 1265.00000
+prim_fdr:: FD esti mirror sig: 1277.85315
+prim_fdr:: loss1: -0.21799
+prim_fdr:: loss2: 1.63813
+prim_fdr:: Estimated FDP: 0.17515
+prim_fdr:: FDP: 0.0
+prim_fdr:: Slope: a=[4.3502684], b=[-9.001582]
+prim_fdr:: Bump 0: w=-1.776598, mu=[0.8133073], sigma=[0.00426941]
+prim_fdr:: Bump 1: w=-1.4263667, mu=[0.9010871], sigma=[0.00222839]
+prim_fdr:: Bump 2: w=-3.3906574, mu=[0.6151719], sigma=[0.00905106]
+prim_fdr:: Bump 3: w=-0.9664601, mu=[0.976218], sigma=[0.00068252]
+prim_fdr:: Bump 4: w=-2.262107, mu=[0.6875652], sigma=[0.00509282]
+prim_fdr:: 
+

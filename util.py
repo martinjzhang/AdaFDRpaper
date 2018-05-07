@@ -3,6 +3,7 @@ import scipy as sp
 from scipy import stats
 import matplotlib.pyplot as plt
 from scipy.stats import rankdata
+import logging
 
 """
     calculate the dimension-wise rank statistics
@@ -102,11 +103,15 @@ def t_cal(x,a,b,w,mu,sigma):
 """ 
     summary the result based on the predicted value and the true value 
 """ 
-def result_summary(pred,h):
-    if h is not None: print("# Num of alternatives:",np.sum(h))
+def result_summary(pred,h,logger=None):
+    if h is not None: 
+        print("# Num of alternatives:",np.sum(h))
     print("# Num of discovery:",np.sum(pred))
-    if h is not None: print("# Num of true discovery:",np.sum(pred * h))
-    if h is not None: print("# Actual FDP:", 1-np.sum(pred * h) / np.sum(pred))
+    if logger is not None:
+        logger.info('# n_rej=%d'%np.sum(pred))
+    if h is not None: 
+        print("# Num of true discovery:",np.sum(pred * h))
+        print("# Actual FDP:", 1-np.sum(pred * h) / np.sum(pred))
     print('\n')
     
 ## summary functions 

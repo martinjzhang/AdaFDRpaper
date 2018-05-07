@@ -1,0 +1,40 @@
+benchmark_2DGM:: ## BH, n_rej=9903, t_rej=0.00990
+benchmark_2DGM:: ## SBH, n_rej=11380, t_rej=0.01459
+prim_fdr:: ## PrimFDR_init starts
+prim_fdr:: # Learning null distribution
+font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
+prim_fdr:: # Learning alternative distribution
+prim_fdr:: # Test result with PrimFDR_init
+util:: # n_rej=19742
+prim_fdr:: ## PrimFDR_init finishes
+
+prim_fdr:: ## optimization paramter:
+prim_fdr:: # n_itr=5000, n_samp=100000, lambda0=273, lambda1=100
+
+prim_fdr:: ## optimization initialization:
+prim_fdr:: # Slope: a=[0.2541162  0.35176268], b=[-5.7524786]
+prim_fdr:: # Bump 0: w=-1.3564792, mu=[0.7729132 0.7525157], sigma=[0.00832975 0.01883757]
+prim_fdr:: # Bump 1: w=-1.8958237, mu=[0.24555534 0.42135638], sigma=[0.02957659 0.02660655]
+prim_fdr:: # Bump 2: w=-2.6879256, mu=[0.7891236 0.745137 ], sigma=[0.03072283 0.03245972]
+prim_fdr:: # Bump 3: w=-1.7029544, mu=[0.2531226 0.3753145], sigma=[0.03028898 0.02455429]
+prim_fdr:: # Bump 4: w=-0.95068574, mu=[0.91014963 0.7526727 ], sigma=[0.00506898 0.02840194]
+prim_fdr:: 
+
+prim_fdr:: ## iteration 0
+prim_fdr:: n_rej: 20464
+prim_fdr:: n_rej sig: 20481
+prim_fdr:: FD esti mirror: 2272.00000
+prim_fdr:: FD esti mirror sig: 2295.88843
+prim_fdr:: loss1: -0.20482
+prim_fdr:: loss2: 0.24770
+prim_fdr:: Estimated FDP: 0.11209
+prim_fdr:: FDP: 0.0
+prim_fdr:: Slope: a=[0.24911623 0.3467627 ], b=[-5.7574787]
+prim_fdr:: Bump 0: w=-1.3614792, mu=[0.7779132  0.75751567], sigma=[0.00832975 0.01883757]
+prim_fdr:: Bump 1: w=-1.9008237, mu=[0.24055535 0.41635638], sigma=[0.02957659 0.02660655]
+prim_fdr:: Bump 2: w=-2.6929255, mu=[0.7941236 0.750137 ], sigma=[0.03072283 0.03245972]
+prim_fdr:: Bump 3: w=-1.7079544, mu=[0.2481226 0.3803145], sigma=[0.03028898 0.02455429]
+prim_fdr:: Bump 4: w=-0.95568573, mu=[0.90514964 0.74767274], sigma=[0.00506898 0.02840194]
+prim_fdr:: 
+

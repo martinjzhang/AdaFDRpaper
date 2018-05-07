@@ -270,14 +270,14 @@ def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,cor
     
     return n_rej,t,theta    
 
-def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug=''):   
+def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',output_folder=None,logger=None):   
     ## feature preprocessing 
     torch.manual_seed(42)
     d=1 if len(x.shape)==1 else x.shape[1]
     x = feature_preprocess(x,p,qt_norm=qt_norm)
     
     # rough threshold calculation using PrimFDR_init 
-    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose) 
+    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose,output_folder=output_folder,logger=logger) 
 
     ## transform the parameters
     a     = a_init
@@ -304,6 +304,9 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     if verbose: 
         print('## optimization paramter:')
         print('# n_itr=%s, n_samp=%s, lambda0=%s, lambda1=%s\n'%(str(n_itr),str(n_samp),str(lambda0),str(lambda1)))
+        if logger is not None:
+            logger.info('## optimization paramter:')
+            logger.info('# n_itr=%s, n_samp=%s, lambda0=%s, lambda1=%s\n'%(str(n_itr),str(n_samp),str(lambda0),str(lambda1)))
            
     ## optimization: initialization         
     lambda0 = Variable(torch.Tensor([lambda0]),requires_grad=False)
@@ -322,6 +325,14 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         for k in range(K):
             print('# Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))
         print('\n')
+        
+        if logger is not None:
+            logger.info('## optimization initialization:')
+            logger.info ('# Slope: a=%s, b=%s'%(str(a.data.numpy()),str(b.data.numpy())))
+            for k in range(K):
+                logger.info('# Bump %s: w=%s, mu=%s, sigma=%s'\
+                            %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))
+            logger.info('\n')
         
     optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.005)
     optimizer.zero_grad()
@@ -350,7 +361,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         loss_rec[l] = loss.data.numpy()
         
         if verbose:
-            if l%(int(n_itr)/5)==0:
+            if l%(int(n_itr)/5)==0:              
                 print('## iteration %s'%str(l))    
                 print('n_rej: ',np.sum(t.data.numpy()>p.data.numpy()))
                 print('n_rej sig: ',np.sum(sigmoid(lambda0.data.numpy()*(t.data.numpy()-p.data.numpy()))))
@@ -358,20 +369,48 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                 print('FD esti mirror sig:',np.sum(sigmoid(lambda0.data.numpy()*(p.data.numpy()-1+t.data.numpy()))))             
                 print('loss1: ',loss1.data.numpy())
                 print('loss2: ',loss2.data.numpy())
-                print('Estimated FDP: %s'%str((torch.mean(torch.sigmoid(lambda0*(t+p-1)))/torch.mean(torch.sigmoid(lambda0*(t-p)))).data.numpy()))
+                print('Estimated FDP: %s'\
+                      %str((torch.mean(torch.sigmoid(lambda0*(t+p-1)))/torch.mean(torch.sigmoid(lambda0*(t-p)))).data.numpy()))
                 print('FDP: %s'%str( np.sum((h==0)*(p.data.numpy()<t.data.numpy()))/np.sum(p.data.numpy()<t.data.numpy())))
                 print('Slope: a=%s, b=%s'%(str(a.data.numpy()),str(b.data.numpy())))
                 for k in range(K):
-                    print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))             
+                    print('Bump %s: w=%s, mu=%s, sigma=%s'\
+                          %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))             
+                                                                      
                 if d==1:
                     plt.figure(figsize=[18,5])
                     plot_t(t.data.numpy(),p.data.numpy(),x.data.numpy(),h)
-                    plt.show()
+                    if output_folder is not None:
+                        plt.savefig(output_folder+'/threshold_itr_%d.png'%l)
+                    else:
+                        plt.show()
                 print('\n')
+                
+                if logger is not None:
+                    logger.info('## iteration %s'%str(l))    
+                    logger.info('n_rej: %d'%np.sum(t.data.numpy()>p.data.numpy()))
+                    logger.info('n_rej sig: %d'%np.sum(sigmoid(lambda0.data.numpy()*(t.data.numpy()-p.data.numpy()))))
+                    logger.info('FD esti mirror: %0.5f'%np.sum(p.data.numpy()>1-t.data.numpy()))
+                    logger.info('FD esti mirror sig: %0.5f'\
+                                %np.sum(sigmoid(lambda0.data.numpy()*(p.data.numpy()-1+t.data.numpy()))))             
+                    logger.info('loss1: %0.5f'%loss1.data.numpy())
+                    logger.info('loss2: %0.5f'%loss2.data.numpy())
+                    logger.info('Estimated FDP: %0.5f'\
+                          %(torch.mean(torch.sigmoid(lambda0*(t+p-1)))/torch.mean(torch.sigmoid(lambda0*(t-p)))).data.numpy())
+                    logger.info('FDP: %s'\
+                                %str( np.sum((h==0)*(p.data.numpy()<t.data.numpy()))/np.sum(p.data.numpy()<t.data.numpy())))
+                    logger.info('Slope: a=%s, b=%s'%(str(a.data.numpy()),str(b.data.numpy())))
+                    for k in range(K):
+                        logger.info('Bump %s: w=%s, mu=%s, sigma=%s'\
+                                    %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))    
+                    logger.info('\n')                  
     if verbose:
         plt.figure()
         plt.plot(np.log(loss_rec-loss_rec.min()+1e-3))
-        plt.show()        
+        if output_folder is not None:
+            plt.savefig(output_folder+'/loss.png')
+        else:
+            plt.show()       
         
     p = p.data.numpy()
     x = x.data.numpy()
@@ -405,10 +444,11 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
 """
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
-def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
+def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,logger=None):
     #x = feature_preprocess(x,p)## fix it: multiple places used this function
     np.random.seed(42)
     if verbose: print('## PrimFDR_init starts')   
+    if logger is not None: logger.info('## PrimFDR_init starts')   
             
     ## extract the null and the alternative proportion
     _,t_BH = bh(p,alpha=alpha)
@@ -416,25 +456,34 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
     
     ## fit the null distribution
     if verbose: print('# Learning null distribution')
-    w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,verbose=verbose)   
+    if logger is not None: logger.info('# Learning null distribution')   
+    w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,\
+                                                   verbose=verbose,logger=logger,output_folder=output_folder,suffix='_null')   
     
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
     
     if verbose: print('# Learning alternative distribution')
-    w,a,mu,sigma = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose)
+    if logger is not None: logger.info('# Learning alternative distribution') 
+    w,a,mu,sigma = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose,\
+                               logger=logger,output_folder=output_folder,suffix='_alt')
     
     if verbose:        
         t = f_all(x,a,mu,sigma,w)
         gamma = rescale_mirror(t,p,alpha)   
         t = t*gamma
         print('# Test result with PrimFDR_init')
-        result_summary(p<t,h) 
+        if logger is not None: logger.info('# Test result with PrimFDR_init')
+        result_summary(p<t,h,logger=logger) 
         
         plt.figure(figsize=[18,5])
         plot_t(t,p,x,h)
-        plt.show()
+        if output_folder is not None: 
+            plt.savefig(output_folder+'/Threshold after PrimFDR_init.png')
+        else:
+            plt.show()
         print('## PrimFDR_init finishes\n')
+        if logger is not None: logger.info('## PrimFDR_init finishes\n')
     return w,a,mu,sigma    
 
 """ 
