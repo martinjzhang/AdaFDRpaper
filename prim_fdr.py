@@ -6,6 +6,8 @@ import torch
 from torch.autograd import Variable
 from util import *
 from multiprocessing import Pool
+import logging
+import matplotlib.pyplot as plt
 #from torch.multiprocessing import Pool
 
 """ 
@@ -438,7 +440,7 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False):
 """ 
     mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
 """
-def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):   
+def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,suffix=None):   
     d=1 if len(x.shape)==1 else x.shape[1]
     n_samp = x.shape[0]
     if x_w is None: x_w=np.ones([n_samp],dtype=float)
@@ -452,12 +454,13 @@ def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
     mu,sigma = GMM.means_,GMM.covariances_**0.5
     w_samp   = np.zeros([K+1,n_samp],dtype=float)
     i        = 0
-        
-    print('## initialization')
-    print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
-    for k in range(K):
-        print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
-    print('\n')    
+    
+    if verbose:
+        print('## initialization')
+        print('Slope: w=%s, a=%s'%(str(w[0]),str(a)))
+        for k in range(K):
+            print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
+        print('\n')    
     
     while np.linalg.norm(w-w_old)>1e-3 and i<n_itr:       
         ## E step       
@@ -498,6 +501,34 @@ def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False):
         plt.ylim([-1e-3,1.5*temp_hist.max()])
         plt.title('weighted')
         plt.show()   
+        
+    if output_folder is not None:
+        bins_ = np.linspace(0,1,101)
+        if d==1:
+            plt.figure(figsize=[18,5])
+            plt.hist(x,bins=bins_,weights=x_w/np.sum(x_w)*100)    
+            temp_p = np.zeros(bins_.shape[0])
+            temp_p += w[0]*f_slope(bins_,a)
+            for i in range(1,w.shape[0]):
+                temp_p += w[i]*f_bump(bins_,mu[i-1],sigma[i-1])
+            plt.plot(bins_,temp_p)
+
+            plt.savefig(output_folder+'/projection%s.png'%(suffix))
+        
+        else:
+            plt.figure(figsize=[18,12])
+            n_figure = min(d,4)
+            for i_dim in range(n_figure):        
+                plt.subplot(str(n_figure)+'1'+str(i_dim+1))
+                plt.hist(x[:,i_dim],bins=bins_,weights=x_w/np.sum(x_w)*100)    
+                temp_p = np.zeros(bins_.shape[0])
+                temp_p += w[0]*f_slope(bins_,a[i_dim])
+                for i in range(1,w.shape[0]):
+                    temp_p += w[i]*f_bump(bins_,mu[i-1,i_dim],sigma[i-1,i_dim])
+                plt.plot(bins_,temp_p)
+                plt.title('Dimension %d'%(i_dim+1))
+            plt.savefig(output_folder+'/projection%s.png'%(suffix))
+        plt.close('all')
     return w,a,mu,sigma
 
 """
@@ -547,7 +578,7 @@ def f_slope(x,a):
 
 ## ML fit of the Gaussian, without finite interval correction
 # fix it: estimate the parameters using a truncated normal distribution
-def ML_bump(x,w=None):
+def ML_bump(x,w=None,logger=None,gradient_check=False):
     #def ML_bump_1d(x,w=None):            
     #    mean_ = np.sum(x*w)/np.sum(w)
     #    var_  = np.sum((x-mean_)**2*w)/np.sum(w)
@@ -557,7 +588,7 @@ def ML_bump(x,w=None):
     #    sigma = np.sqrt(var_)     
     #    return mu,sigma
     
-    def ML_bump_1d(x,w):
+    def ML_bump_1d(x,w,logger=None,gradient_check=False):
         def fit_f(param,x,w):                
             mu,sigma = param
             Z = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
@@ -574,20 +605,33 @@ def ML_bump(x,w=None):
             d_l_sig = -d_c_sig/Z - 1/sigma + t/sigma**3
             grad = np.array([d_l_mu,d_l_sig],dtype=float)  
             return l,grad
-
+        
+        ## gradient check
+        if gradient_check:
+            _,grad_ = fit_f([0.2,0.1],x,w)
+            num_dmu = (fit_f([0.2+1e-8,0.1],x,w)[0]-fit_f([0.2,0.1],x,w)[0]) / 1e-8
+            num_dsigma = (fit_f([0.2,0.1+1e-8],x,w)[0]-fit_f([0.2,0.1],x,w)[0]) / 1e-8          
+            logger.info('## Gradient check ##')
+            logger.info('#  param value: mu=%0.3f, sigma=%0.3f'%(0.2,0.1))
+            logger.info('#  Theoretical grad: dmu=%0.5f, dsigma=%0.5f'%(grad_[0],grad_[1]))
+            logger.info('#  Numerical grad: dmu=%0.5f, dsigma=%0.5f'%(num_dmu,num_dsigma))
+            
         ##  if the variance is small, no need to fit a truncated Gaussian
-        mu,sigma = np.mean(x),np.std(x)
+        mu = np.sum(x*w)/np.sum(w)
+        sigma = np.sqrt(np.sum((x-mu)**2*w)/np.sum(w))
+        
         if sigma<0.1:
             return mu,sigma
 
-        ## gradient check
-        param = np.array([np.mean(x),np.std(x)])    
+        
+        param = np.array([mu,sigma])    
         lr = 0.01
         max_step = 0.025
         max_itr = 100
         i_itr = 0
         l_old = -10
-
+        
+        #rec_ = []
         while i_itr<max_itr:
             l,grad = fit_f(param,x,w)
             if np.absolute(l-l_old)<0.01:
@@ -595,30 +639,30 @@ def ML_bump(x,w=None):
             else:
                 l_old=l
             update = (grad*lr).clip(min=-max_step,max=max_step)
+            #rec_.append([i_itr,param,grad,update])
+            #print([i_itr,param,grad,update])
             param += update
             i_itr +=1     
+            
             if np.isnan(param).any():
+                
                 return np.mean(x),np.std(x)
+                
         mu,sigma = param  
-        return mu,sigma  
+        if sigma>0.25:
+            sigma=1
+        return mu,sigma      
     
     if w is None:
         w = np.ones(x.shape[0])
         
     if len(x.shape)==1:
-        return ML_bump_1d(x,w)
-    else:
-        
+        return ML_bump_1d(x,w,logger=logger,gradient_check=gradient_check)
+    else:       
         mu    = np.zeros(x.shape[1],dtype=float)
         sigma = np.zeros(x.shape[1],dtype=float)
         for i in range(x.shape[1]):
-            #plt.figure(figsize=[12,5])
-            #plt.subplot(121)
-            #plt.hist(x[:,1],weights=w)
-            #plt.subplot(122)
-            #plt.hist(w)
-            #plt.show()
-            mu[i],sigma[i] = ML_bump_1d(x[:,i],w)
+            mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
         return mu,sigma
     
 ## old code for ML_bump_1d

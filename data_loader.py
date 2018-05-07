@@ -4,7 +4,8 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from util import *
 from matplotlib import mlab
-from prim_fdr import * 
+from prim_fdr import *
+import logging
 
 
 ## generating the 1d toy example
@@ -55,7 +56,7 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
         return p,x,h
     
 ## toy data to testing mixture_fit
-def load_toy_mixture(opt=0):
+def load_toy_mixture(opt=0,logger=None):
     def grid_2d():
         grid = np.linspace(0,1,101)
         x,y  = np.meshgrid(grid,grid)
@@ -65,7 +66,7 @@ def load_toy_mixture(opt=0):
         x    = np.concatenate([x.reshape((n_g,1)),y.reshape((n_g,1))],axis=1)
         return x,n_g
     
-    n_sample = 100000
+    n_sample = 10000
     if opt==0: # 2d slope, generated according to the slope model
         a    = np.array([2,0],dtype=float)
         print('slope parameter a = ',a) 
@@ -74,7 +75,7 @@ def load_toy_mixture(opt=0):
         p   /= p.sum()
         sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
         sample = x[sample,:]
-        return sample
+        
     elif opt==1: # 2d bump, generated according to the exact model   
         mu = np.array([0.5,0.2],dtype=float)
         sigma = np.array([0.1,0.1],dtype=float)
@@ -85,11 +86,56 @@ def load_toy_mixture(opt=0):
         p   /= p.sum()
         sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
         sample = x[sample,:]
-        return sample
+
     elif opt==2: # 2d slope+bump  
-        pass
+        w = [0.4,0.3,0.3]
+        a = np.array([2,0],dtype=float)
+        mu1 = np.array([0.2,0.2],dtype=float)
+        sigma1 = np.array([0.1,0.5],dtype=float)
+        mu2 = np.array([0.7,0.7],dtype=float)
+        sigma2 = np.array([0.1,0.1],dtype=float)
+        
+        x,ng = grid_2d()
+        p    = w[0]*f_slope(x,a) + w[1]*f_bump(x,mu1,sigma1) + w[2]*f_bump(x,mu2,sigma2)
+        p   /= p.sum()
+        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
+        sample = x[sample,:]
+        
+        if logger is not None:   
+            logger.info('## Simulated data info: 2d_slope_bump, n_sample=%d ##'%n_sample)
+            logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
+            logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
+            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
+            logger.info('\n')
+            
+    elif opt==3: # 10d slope+bump in the first 2d
+        w = [0.4,0.3,0.3]
+        a = np.array([2,0],dtype=float)
+        mu1 = np.array([0.2,0.2],dtype=float)
+        sigma1 = np.array([0.1,0.5],dtype=float)
+        mu2 = np.array([0.7,0.7],dtype=float)
+        sigma2 = np.array([0.1,0.1],dtype=float)
+        
+        x,ng = grid_2d()
+        p    = w[0]*f_slope(x,a) + w[1]*f_bump(x,mu1,sigma1) + w[2]*f_bump(x,mu2,sigma2)
+        p   /= p.sum()
+        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
+        sample = x[sample,:]
+        
+        sample_noise = np.random.uniform(high=1,low=0,size = (n_sample,7))
+        sample = np.concatenate([sample,sample_noise],1)
+        
+        if logger is not None:   
+            logger.info('## Simulated data info: 10d_slope_bump, n_sample=%d ##'%n_sample)
+            logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
+            logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
+            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
+            logger.info('# Other dims are uniform')
+            logger.info('\n')        
     else:
         pass
+    
+    return sample,x,p
     
 ## neuralFDR simulated examples    
 def neuralfdr_generate_data_1D(job=0, n_samples=10000,data_vis=0, num_case=4):
