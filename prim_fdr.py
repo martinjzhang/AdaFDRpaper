@@ -319,8 +319,6 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     w       = Variable(torch.Tensor(w),requires_grad=True)
     mu      = Variable(torch.Tensor(mu),requires_grad=True)
     sigma = sigma.clip(min=1e-6)
-
-
     sigma   = Variable(1/torch.Tensor(sigma),requires_grad=True)    
     
     if verbose:
@@ -338,11 +336,13 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                             %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))
             logger.info('\n')
         
-    optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.005)
+    optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.05)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
     optimizer.zero_grad()
     
     ## fix it: tune lambda1 to balance the gradient of the two losses
     for l in range(n_itr):
+        scheduler.step()
         ## calculating the model
         optimizer.zero_grad()
         t = torch.exp(x*a+b) if d==1 else torch.exp(torch.matmul(x,a)+b)
