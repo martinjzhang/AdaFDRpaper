@@ -8,6 +8,7 @@ from util import *
 from multiprocessing import Pool
 import logging
 import matplotlib.pyplot as plt
+import torch.nn.functional as tf
 #from torch.multiprocessing import Pool
 
 """ 
@@ -313,15 +314,16 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     lambda0 = Variable(torch.Tensor([lambda0]),requires_grad=False)
     lambda1 = Variable(torch.Tensor([lambda1]),requires_grad=False)
     p       = Variable(torch.from_numpy(p).float(),requires_grad=False)
-    x       = Variable(torch.from_numpy(x).float(),requires_grad=False)
+    x       = Variable(torch.from_numpy(x).float().view(-1,d),requires_grad=False)
     a       = Variable(torch.Tensor([a]),requires_grad=True) if d == 1 else Variable(torch.Tensor(a),requires_grad=True)
     b       = Variable(torch.Tensor([b]),requires_grad=True)
     w       = Variable(torch.Tensor(w),requires_grad=True)
-    mu      = Variable(torch.Tensor(mu),requires_grad=True)
+    mu      = Variable(torch.Tensor(mu).view(-1,d),requires_grad=True)
     sigma = sigma.clip(min=1e-6)
 
-
-    sigma   = Variable(1/torch.Tensor(sigma),requires_grad=True)    
+    sigma_mean = np.mean(1/sigma)
+    print(sigma_mean)
+    sigma   = Variable(torch.Tensor((1/sigma) / (sigma_mean)),requires_grad=True)    
     
     if verbose:
         print('## optimization initialization:')
@@ -345,15 +347,13 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     for l in range(n_itr):
         ## calculating the model
         optimizer.zero_grad()
-        t = torch.exp(x*a+b) if d==1 else torch.exp(torch.matmul(x,a)+b)
+        t = torch.exp(torch.matmul(x,a)+b)
+        
         for i in range(K):
-            if d==1:
-                t = t+torch.exp(w[i]-(x-mu[i])**2 * sigma[i])
-            else:
-                t = t+torch.exp(w[i]-torch.matmul((x-mu[i,:])**2,sigma[i,:]))
+            t = t+torch.exp(w[i]-torch.matmul((x-mu[i,:])**2,sigma[i,:] * sigma_mean))
         loss1 = -torch.mean(torch.sigmoid(lambda0*(t-p)))
         #loss2 = lambda1*(torch.mean(t)*nr-alpha*torch.mean(torch.sigmoid(lambda0*(t-p)))).clamp(min=0)
-        loss2 = lambda1*(torch.mean(torch.sigmoid(lambda0*(t+p-1)))-alpha*torch.mean(torch.sigmoid(lambda0*(t-p)))).clamp(min=0)
+        loss2 = lambda1*tf.relu(torch.mean(torch.sigmoid(lambda0*(t+p-1)))-alpha*torch.mean(torch.sigmoid(lambda0*(t-p))))
         loss  = loss1+loss2
         
         ## backprop
@@ -418,9 +418,8 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     p = p.data.numpy()
     x = x.data.numpy()
     
-    a,b,w,mu,sigma = a.data.numpy(),b.data.numpy(),w.data.numpy(),mu.data.numpy(),(1/sigma).data.numpy()
-    
-    
+    a,b,w,mu,sigma = a.data.numpy(),b.data.numpy(),w.data.numpy(),mu.data.numpy(),(1/(sigma * sigma_mean)).data.numpy()
+
     t = t_cal(x,a,b,w,mu,sigma)
     gamma = rescale_mirror(t,p,alpha)   
     t *= gamma
