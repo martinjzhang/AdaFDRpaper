@@ -290,7 +290,6 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     # scale factor 
     t = t_cal(x,a,b,w,mu,sigma)    
     gamma=rescale_mirror(t,p,alpha)
-    print(gamma)
     t = gamma*t
     b,w = b+np.log(gamma),w+np.log(gamma) 
     
@@ -339,8 +338,8 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                             %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))
             logger.info('\n')
         
-    optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.05)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+    optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.02)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.2)
     optimizer.zero_grad()
     
     ## fix it: tune lambda1 to balance the gradient of the two losses
@@ -430,21 +429,6 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     return n_rej,t,theta
 
 """
-    optimization using scipy
-"""
-#def PrimFDR_optimize(theta,lambda0,lambda1,x,p): 
-#    res = sp.optimize.minimize(f_opt,theta,args=(lambda0,lambda1,x,p),jac=False,options={'disp': True})
-#    return res.theta
-#
-#def f_opt(theta,lambda0,lambda1,x,p):
-#    a,b,w,mu,sigma = theta
-#    t = t_cal(x,a,b,w,mu,sigma)
-#    loss1 = -(sigmoid(lambda0*(t-p))).mean()
-#    loss2 = lambda1*(np.mean(sigmoid(lambda0*(t+p-1)))-0.1*np.mean(sigmoid(lambda0*(t-p)))).clip(min=0)
-#    loss = loss1+loss2
-#    return loss
-
-"""
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
 def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,logger=None):
@@ -492,13 +476,13 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
 """ 
     mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
 """
-def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,suffix=None):   
-    d=1 if len(x.shape)==1 else x.shape[1]
-    n_samp = x.shape[0]
+def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,suffix=None):   
+    if len(x.shape)==1: x = x.reshape([-1,1])
+    n_samp,d = x.shape
     if x_w is None: x_w=np.ones([n_samp],dtype=float)
         
     ## initialization
-    GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(np.reshape(x,[n_samp,d])) # fixit: the weights x_w are gone?? 
+    GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(x) # fixit: the weights x_w are gone?? 
     w_old = np.zeros([K+1])
     w = 0.5*np.ones([K+1])/K
     w[0] = 0.5
@@ -556,13 +540,15 @@ def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,ou
         
     if output_folder is not None:
         bins_ = np.linspace(0,1,101)
+        x_grid = bins_.reshape([-1,1])
+        
         if d==1:
             plt.figure(figsize=[18,5])
             plt.hist(x,bins=bins_,weights=x_w/np.sum(x_w)*100)    
             temp_p = np.zeros(bins_.shape[0])
-            temp_p += w[0]*f_slope(bins_,a)
+            temp_p += w[0]*f_slope(x_grid,a)
             for i in range(1,w.shape[0]):
-                temp_p += w[i]*f_bump(bins_,mu[i-1],sigma[i-1])
+                temp_p += w[i]*f_bump(x_grid,mu[i-1],sigma[i-1])
             plt.plot(bins_,temp_p)
 
             plt.savefig(output_folder+'/projection%s.png'%(suffix))
@@ -574,9 +560,9 @@ def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,ou
                 plt.subplot(str(n_figure)+'1'+str(i_dim+1))
                 plt.hist(x[:,i_dim],bins=bins_,weights=x_w/np.sum(x_w)*100)    
                 temp_p = np.zeros(bins_.shape[0])
-                temp_p += w[0]*f_slope(bins_,a[i_dim])
+                temp_p += w[0]*f_slope(x_grid,a[[i_dim]])
                 for i in range(1,w.shape[0]):
-                    temp_p += w[i]*f_bump(bins_,mu[i-1,i_dim],sigma[i-1,i_dim])
+                    temp_p += w[i]*f_bump(x_grid,mu[i-1,[i_dim]],sigma[i-1,[i_dim]])
                 plt.plot(bins_,temp_p)
                 plt.title('Dimension %d'%(i_dim+1))
             plt.savefig(output_folder+'/projection%s.png'%(suffix))
@@ -585,6 +571,10 @@ def mixture_fit(x,K,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,ou
 
 """
     sub-routines for mixture_fit
+    input:  x: x*d array (not (n,))
+            w: (n,) array
+            a: (d,) array
+            mu,sigma: (k,d) array
 """
 ## ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
 def ML_slope(x,w=None,c=0.01):
@@ -604,42 +594,40 @@ def ML_slope(x,w=None,c=0.01):
                 a_u = a_m
         return (a_u+a_l)/2
     
-    if len(x.shape)==1:
-        return ML_slope_1d(x,w,c=c)
-    else:
-        a = np.zeros(x.shape[1],dtype=float)
-        for i in range(x.shape[1]):
-            a[i] = ML_slope_1d(x[:,i],w,c=c)
-        return a
+    a = np.zeros(x.shape[1],dtype=float)
+    for i in range(x.shape[1]):
+        a[i] = ML_slope_1d(x[:,i],w,c=c)
+    return a
 
 ## slope density function
 def f_slope(x,a):
-    if len(x.shape)==1: # 1d case 
-        if a==0:
-            return np.exp(a*x)
-        else: 
-            return a/(np.exp(a)-1)*np.exp(a*x)
-    else:
-        f_x = np.ones([x.shape[0]],dtype=float)
-        for i in range(x.shape[1]):
-            if a[i]==0:
-                f_x *= np.exp(a[i]*x[:,i])
-            else:
-                f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
-        return f_x
+    f_x = np.ones([x.shape[0]],dtype=float)     
+    #if type(a) is not np.ndarray:
+    #    a = np.array([a])
+    #if len(x.shape)==1: x = x.reshape([-1,1])
+    for i in range(x.shape[1]):
+        if a[i]==0:
+            f_x *= np.exp(a[i]*x[:,i])
+        else:
+            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
+    return f_x
+
+# old code:
+#if len(x.shape)==1: # 1d case 
+    #    if a==0:
+    #        return f_x
+    #    else: 
+    #        return a/(np.exp(a)-1)*np.exp(a*x)
+    #else:        
+    #    for i in range(x.shape[1]):
+    #        if a[i]==0:
+    #            f_x *= np.exp(a[i]*x[:,i])
+    #        else:
+    #            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
+    #    return f_x
 
 ## ML fit of the Gaussian, without finite interval correction
-# fix it: estimate the parameters using a truncated normal distribution
 def ML_bump(x,w=None,logger=None,gradient_check=False):
-    #def ML_bump_1d(x,w=None):            
-    #    mean_ = np.sum(x*w)/np.sum(w)
-    #    var_  = np.sum((x-mean_)**2*w)/np.sum(w)
-    #    
-    #    ## estimation            
-    #    mu    = mean_ 
-    #    sigma = np.sqrt(var_)     
-    #    return mu,sigma
-    
     def ML_bump_1d(x,w,logger=None,gradient_check=False):
         def fit_f(param,x,w):                
             mu,sigma = param
@@ -674,7 +662,6 @@ def ML_bump(x,w=None,logger=None,gradient_check=False):
         
         if sigma<0.1:
             return mu,sigma
-
         
         param = np.array([mu,sigma])    
         lr = 0.01
@@ -705,17 +692,23 @@ def ML_bump(x,w=None,logger=None,gradient_check=False):
             sigma=1
         return mu,sigma      
     
-    if w is None:
-        w = np.ones(x.shape[0])
-        
-    if len(x.shape)==1:
-        return ML_bump_1d(x,w,logger=logger,gradient_check=gradient_check)
-    else:       
-        mu    = np.zeros(x.shape[1],dtype=float)
-        sigma = np.zeros(x.shape[1],dtype=float)
-        for i in range(x.shape[1]):
-            mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
-        return mu,sigma
+    if w is None: w = np.ones(x.shape[0])
+       
+    mu    = np.zeros(x.shape[1],dtype=float)
+    sigma = np.zeros(x.shape[1],dtype=float)
+    for i in range(x.shape[1]):
+        mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
+    return mu,sigma
+
+#if len(x.shape)==1: x = x.reshape([-1,1])
+    #if len(x.shape)==1:
+    #    return ML_bump_1d(x,w,logger=logger,gradient_check=gradient_check)
+    #else:       
+    #    mu    = np.zeros(x.shape[1],dtype=float)
+    #    sigma = np.zeros(x.shape[1],dtype=float)
+    #    for i in range(x.shape[1]):
+    #        mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
+    #    return mu,sigma
     
 ## old code for ML_bump_1d
     #def ML_bump_1d(x,w=None):
@@ -730,19 +723,6 @@ def ML_bump(x,w=None,logger=None,gradient_check=False):
     #    mu    = np.sum(x*w)/np.sum(w)    
     #    sigma = np.sqrt(var_)     
     #    return mu,sigma
-    
-#def f_c_cal(mu,sigma):
-#    c = 1/(1+np.exp(-1.65*(1-mu)/sigma)) - 1/(1+np.exp(1.65*mu/sigma))
-#    return 1/c
-#
-#def f_logc_grad_cal(mu,sigma):
-#    e_p = np.exp(1.65*mu/sigma)
-#    e_n = np.exp(-1.65*(1-mu)/sigma)  
-#    grad_mu = 1.65/sigma*( e_p/(1+e_p) + e_n/(1+e_n) -1)    
-#    term1 = 1.65*mu/sigma**2*e_p*(1+e_n)/(1+e_p)/(e_p-e_n)
-#    term2 = 1.65*(1-mu)/sigma**2*e_n*(1+e_p)/(1+e_n)/(e_p-e_n)
-#    grad_sigma = term1+term2
-#    return np.array([grad_mu,grad_sigma])
 
 ## bump density function
 def f_bump(x,mu,sigma):
@@ -750,25 +730,39 @@ def f_bump(x,mu,sigma):
         if sigma<1e-6: return np.zeros(x.shape)
         pmf = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
         return 1/sigma/np.sqrt(2*np.pi)*np.exp(-(x-mu)**2/2/sigma**2)/pmf
+       
+    f_x = np.ones([x.shape[0]],dtype=float)
+    for i in range(x.shape[1]):
+        f_x *=  f_bump_1d(x[:,i],mu[i],sigma[i])
+    return f_x       
+        
+# old code  
+    #if type(mu) is not np.ndarray:
+    #    mu = np.array([mu])   
+    #    sigma = np.array([sigma])
     
-    if len(x.shape)==1:
-        return f_bump_1d(x,mu,sigma)
-    else:
-        f_x = np.ones([x.shape[0]],dtype=float)
-        for i in range(x.shape[1]):
-            f_x *=  f_bump_1d(x[:,i],mu[i],sigma[i])
-        return f_x       
+    #if len(x.shape)==1:
+    #    return f_bump_1d(x,mu,sigma)
+    #else:
+    #    f_x = np.ones([x.shape[0]],dtype=float)
+    #    for i in range(x.shape[1]):
+    #        f_x *=  f_bump_1d(x[:,i],mu[i],sigma[i])
+    #    return f_x       
 
 ## the entire density function
 def f_all(x,a,mu,sigma,w):
-    f = w[0]*f_slope(x,a)
-    if len(x.shape) == 1:
-        for k in range(1,w.shape[0]):
-            f += w[k]*f_bump(x,mu[k-1],sigma[k-1])
-    else:
-        for k in range(1,w.shape[0]):
-            f += w[k]*f_bump(x,mu[k-1,:],sigma[k-1,:])
+    f = w[0]*f_slope(x,a)        
+    for k in range(1,w.shape[0]):
+        f += w[k]*f_bump(x,mu[k-1],sigma[k-1])           
     return f
+
+# old code
+    #if len(x.shape) == 1:
+    #    for k in range(1,w.shape[0]):
+    #        f += w[k]*f_bump(x,mu[k-1],sigma[k-1])
+    #else:
+    #    
+    #return f
 
 
 '''
