@@ -285,7 +285,9 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     b     = np.log(w_init[0]*(a_init/(np.exp(a_init)-1)).prod())    
     w     = np.log(w_init[1:]/((2*np.pi)**(d/2)*sigma_init.prod(axis=1)))
     mu    = mu_init 
-    sigma = 2*sigma_init**2
+    #sigma = 2*sigma_init**2
+    sigma_init = sigma_init.clip(min=1e-3)
+    sigma = 1/(2*sigma_init**2)
     
     # scale factor 
     t = t_cal(x,a,b,w,mu,sigma)    
@@ -296,7 +298,8 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     ## optimization: parameter setting 
     # lambda0: adaptively set based on the approximation accuracy of the sigmoid function
     lambda0,n_rej,n_fd = 1/t.mean(),np.sum(p<t),np.sum(p>1-t)
-    while np.absolute(np.sum(sigmoid((lambda0*(t-p))))-n_rej)>0.02*n_rej or np.absolute(np.sum(sigmoid((lambda0*(t+p-1))))-n_fd)>0.02*n_fd:
+    while np.absolute(np.sum(sigmoid((lambda0*(t-p))))-n_rej)>0.02*n_rej \
+        or np.absolute(np.sum(sigmoid((lambda0*(t+p-1))))-n_fd)>0.02*n_fd:
         lambda0 = lambda0+0.5/t.mean()
     lambda1  = 10/alpha # 100
     lambda0,lambda1 = int(lambda0),int(lambda1)
@@ -318,10 +321,16 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     b       = Variable(torch.Tensor([b]),requires_grad=True)
     w       = Variable(torch.Tensor(w),requires_grad=True)
     mu      = Variable(torch.Tensor(mu).view(-1,d),requires_grad=True)
-    sigma = sigma.clip(min=1e-6)
-    sigma_mean = np.mean(1/sigma)
+    #sigma = sigma.clip(min=1e-6)
+    #sigma_mean = np.mean(1/sigma)
+    #print(sigma_mean)
+    #sigma   = Variable(torch.Tensor((1/sigma) / (sigma_mean)),requires_grad=True)    
+    
+    sigma_mean = np.mean(sigma,axis=0)
+    #sigma_mean = np.mean(sigma)
     print(sigma_mean)
-    sigma   = Variable(torch.Tensor((1/sigma) / (sigma_mean)),requires_grad=True)    
+    sigma   = Variable(torch.Tensor(sigma / sigma_mean),requires_grad=True)
+    sigma_mean = Variable(torch.from_numpy(sigma_mean).float(),requires_grad=False)
     
     if verbose:
         print('## optimization initialization:')
@@ -418,7 +427,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     p = p.data.numpy()
     x = x.data.numpy()
     
-    a,b,w,mu,sigma = a.data.numpy(),b.data.numpy(),w.data.numpy(),mu.data.numpy(),(1/(sigma * sigma_mean)).data.numpy()
+    a,b,w,mu,sigma = a.data.numpy(),b.data.numpy(),w.data.numpy(),mu.data.numpy(),(sigma * sigma_mean).data.numpy()
 
     t = t_cal(x,a,b,w,mu,sigma)
     gamma = rescale_mirror(t,p,alpha)   
@@ -575,44 +584,75 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
             w: (n,) array
             a: (d,) array
             mu,sigma: (k,d) array
+            (The constraint on the ndarray is to save the time for type checking)
 """
 ## ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
-def ML_slope(x,w=None,c=0.01):
-    def ML_slope_1d(x,w=None,c=0.05):
-        if w is None:
-            w = np.ones(x.shape[0])        
-        t = np.sum(w*x)/np.sum(w) ## sufficient statistic
-        a_u=100
-        a_l=-100
-        ## binary search 
-        while a_u-a_l>0.1:
-            a_m  = (a_u+a_l)/2
-            a_m += 1e-2*(a_m==0)
-            if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t:
-                a_l = a_m
-            else: 
-                a_u = a_m
-        return (a_u+a_l)/2
-    
+def ML_slope(x,w=None,c=0.01):   
     a = np.zeros(x.shape[1],dtype=float)
-    for i in range(x.shape[1]):
-        a[i] = ML_slope_1d(x[:,i],w,c=c)
-    return a
+    if w is None:
+        w = np.ones(x.shape[0])   
+    else:
+        w = w+1e-8
+    _,d = x.shape
+    
+    t = np.sum((x.T*w).T,axis=0)/np.sum(w) # sufficient statistic: weighted sum along each dimension
+    a_u=100*np.ones([d],dtype=float)
+    a_l=-100*np.ones([d],dtype=float)
+    ## binary search 
+    while np.linalg.norm(a_u-a_l)>0.01:      
+        a_m  = (a_u+a_l)/2
+        a_m += 1e-2*(a_m==0)
+        temp = (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)
+        a_l[temp<t] = a_m[temp<t]
+        a_u[temp>=t] = a_m[temp>=t]
+    return (a_u+a_l)/2
+
+# old code
+    #def ML_slope_1d(x,w=None,c=0.05):
+    #    if w is None:
+    #        w = np.ones(x.shape[0])        
+    #    t = np.sum(w*x)/np.sum(w) ## sufficient statistic
+    #    a_u=100
+    #    a_l=-100
+    #    ## binary search 
+    #    while a_u-a_l>0.1:
+    #        a_m  = (a_u+a_l)/2
+    #        a_m += 1e-2*(a_m==0)
+    #        if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t:
+    #            a_l = a_m
+    #        else: 
+    #            a_u = a_m
+    #    return (a_u+a_l)/2
+    #
+    #a = np.zeros(x.shape[1],dtype=float)
+    #for i in range(x.shape[1]):
+    #    a[i] = ML_slope_1d(x[:,i],w,c=c)
+    #return a
+    
 
 ## slope density function
 def f_slope(x,a):
-    f_x = np.ones([x.shape[0]],dtype=float)     
-    #if type(a) is not np.ndarray:
-    #    a = np.array([a])
-    #if len(x.shape)==1: x = x.reshape([-1,1])
-    for i in range(x.shape[1]):
-        if a[i]==0:
-            f_x *= np.exp(a[i]*x[:,i])
-        else:
-            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
+    ## Probability (dimension-wise probability)    
+    f_x = np.exp(x*a)
+    ## Normalization factor
+    norm_factor = np.exp(a)-1  
+    temp_v = (norm_factor!=0)
+    norm_factor = np.prod(a[temp_v]/norm_factor[temp_v])
+    ##  Total probability  
+    f_x = np.prod(f_x,axis=1) * norm_factor
     return f_x
 
 # old code:
+    #f_x = np.ones([x.shape[0]],dtype=float)     
+    #for i in range(x.shape[1]):
+    #    if a[i]==0:
+    #        f_x *= np.exp(a[i]*x[:,i])
+    #    else:
+    #        f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
+            
+    #if type(a) is not np.ndarray:
+    #    a = np.array([a])
+    #if len(x.shape)==1: x = x.reshape([-1,1])
 #if len(x.shape)==1: # 1d case 
     #    if a==0:
     #        return f_x
@@ -626,7 +666,8 @@ def f_slope(x,a):
     #            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
     #    return f_x
 
-## ML fit of the Gaussian, without finite interval correction
+## ML fit of the Gaussian
+## Very hard to vectorize. So just leave it here
 def ML_bump(x,w=None,logger=None,gradient_check=False):
     def ML_bump_1d(x,w,logger=None,gradient_check=False):
         def fit_f(param,x,w):                
