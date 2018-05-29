@@ -477,10 +477,14 @@ def load_GTEx_full(verbose=False):
 
     return p,x,n_full,cate_name
 
-def load_ukbb(verbose=False):
-    file_name='/data/martin/ukbb.csv'
+def load_ukbb(verbose=False, use_other = False):
+    file_name='/data/ukbb_process/breast_cancer_filtered.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
-    x,p,n_full = X[:,0:2],X[:,2],847800
+    if not use_other:
+        x,p,n_full = X[:,0:2],X[:,-2],847800
+    else:
+        x,p,n_full = X[:,0:6],X[:,-2],847800
+    
     #x[:,0],x[:,1] = np.log(x[:,0]+1), np.log(x[:,1]+1)
     if verbose:
         print('## Load GTEx full data ##')
@@ -492,6 +496,9 @@ def load_ukbb(verbose=False):
         
     cate_name = {'Art': 0, 'Ctcf': 1, 'CtcfO': 2, 'DnaseD': 3, 'DnaseU': 4, 'Elon': 5, 'ElonW': 6, 'Enh': 7, 'EnhF': 8, 'EnhW': 9, 'EnhWF': 10, 'FaireW': 11, "Gen3'": 12, "Gen5'": 13, 'H4K20': 14, 'Low': 15, 'Pol2': 16, 'PromF': 17, 'PromP': 18, 'Quies': 19, 'Repr': 20, 'ReprD': 21, 'ReprW': 22, 'Tss': 23, 'TssF': 24}
     cate_name = {v: k for k, v in cate_name.items()}
-    cate_name = [cate_name,None]
-
+    if not use_other:
+        cate_name = [cate_name,None]
+    else:
+        cate_name = [cate_name,None, None, None, None, None]
+        
     return p,x,n_full,cate_name
