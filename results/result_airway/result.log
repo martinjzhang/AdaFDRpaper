@@ -5,105 +5,105 @@ prim_fdr:: # Learning null distribution
 font_manager:: findfont: Matching :family=sans-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/martin/anaconda3/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 0.050000
 prim_fdr:: # Learning alternative distribution
 prim_fdr:: # Test result with PrimFDR_init
-util:: # n_rej=6022
+util:: # n_rej=6027
 prim_fdr:: ## PrimFDR_init finishes
 
 prim_fdr:: ## optimization paramter:
-prim_fdr:: # n_itr=5000, n_samp=33469, lambda0=652, lambda1=100
+prim_fdr:: # n_itr=1500, n_samp=33469, lambda0=623, lambda1=100
 
 prim_fdr:: ## optimization initialization:
-prim_fdr:: # Slope: a=[4.3552685], b=[-8.996582]
-prim_fdr:: # Bump 0: w=-1.771598, mu=[0.8083073], sigma=[0.00426941]
-prim_fdr:: # Bump 1: w=-1.4213667, mu=[0.9060871], sigma=[0.00222839]
-prim_fdr:: # Bump 2: w=-3.3856575, mu=[0.6101719], sigma=[0.00905106]
-prim_fdr:: # Bump 3: w=-0.9614601, mu=[0.971218], sigma=[0.00068252]
-prim_fdr:: # Bump 4: w=-2.2571068, mu=[0.6925652], sigma=[0.00509282]
+prim_fdr:: # Slope: a=[4.3155994], b=[-9.050655]
+prim_fdr:: # Bump 0: w=-1.7656142, mu=[0.80797005], sigma=[0.4829224]
+prim_fdr:: # Bump 1: w=-1.424836, mu=[0.9056134], sigma=[0.9122379]
+prim_fdr:: # Bump 2: w=-3.3818955, mu=[0.610088], sigma=[0.22454594]
+prim_fdr:: # Bump 3: w=-0.97255355, mu=[0.9710909], sigma=[2.9771924]
+prim_fdr:: # Bump 4: w=-2.2439744, mu=[0.69231707], sigma=[0.40310133]
 prim_fdr:: 
 
 prim_fdr:: ## iteration 0
 prim_fdr:: n_rej: 7298
-prim_fdr:: n_rej sig: 7295
-prim_fdr:: FD esti mirror: 1265.00000
-prim_fdr:: FD esti mirror sig: 1277.85315
-prim_fdr:: loss1: -0.21799
-prim_fdr:: loss2: 1.63813
-prim_fdr:: Estimated FDP: 0.17515
+prim_fdr:: n_rej sig: 7297
+prim_fdr:: FD esti mirror: 1267.00000
+prim_fdr:: FD esti mirror sig: 1277.05298
+prim_fdr:: loss1: -0.21803
+prim_fdr:: loss2: 1.63530
+prim_fdr:: Estimated FDP: 0.17500
 prim_fdr:: FDP: 0.0
-prim_fdr:: Slope: a=[4.3502684], b=[-9.001582]
-prim_fdr:: Bump 0: w=-1.776598, mu=[0.8133073], sigma=[0.00426941]
-prim_fdr:: Bump 1: w=-1.4263667, mu=[0.9010871], sigma=[0.00222839]
-prim_fdr:: Bump 2: w=-3.3906574, mu=[0.6151719], sigma=[0.00905106]
-prim_fdr:: Bump 3: w=-0.9664601, mu=[0.976218], sigma=[0.00068252]
-prim_fdr:: Bump 4: w=-2.262107, mu=[0.6875652], sigma=[0.00509282]
+prim_fdr:: Slope: a=[4.2955995], b=[-9.070655]
+prim_fdr:: Bump 0: w=-1.7856141, mu=[0.82797], sigma=[0.5029224]
+prim_fdr:: Bump 1: w=-1.444836, mu=[0.88561344], sigma=[0.93223786]
+prim_fdr:: Bump 2: w=-3.4018955, mu=[0.630088], sigma=[0.24454594]
+prim_fdr:: Bump 3: w=-0.99255353, mu=[0.9910909], sigma=[2.9971924]
+prim_fdr:: Bump 4: w=-2.2639744, mu=[0.6723171], sigma=[0.4231013]
 prim_fdr:: 
 
-prim_fdr:: ## iteration 1000
-prim_fdr:: n_rej: 5926
-prim_fdr:: n_rej sig: 5920
-prim_fdr:: FD esti mirror: 560.00000
-prim_fdr:: FD esti mirror sig: 573.56726
-prim_fdr:: loss1: -0.17690
+prim_fdr:: ## iteration 300
+prim_fdr:: n_rej: 5813
+prim_fdr:: n_rej sig: 5806
+prim_fdr:: FD esti mirror: 561.00000
+prim_fdr:: FD esti mirror sig: 571.10602
+prim_fdr:: loss1: -0.17348
 prim_fdr:: loss2: 0.00000
-prim_fdr:: Estimated FDP: 0.09687
+prim_fdr:: Estimated FDP: 0.09836
 prim_fdr:: FDP: 0.0
-prim_fdr:: Slope: a=[3.9158568], b=[-9.45619]
-prim_fdr:: Bump 0: w=-2.296675, mu=[0.84399825], sigma=[0.00426941]
-prim_fdr:: Bump 1: w=-1.9413465, mu=[0.9174941], sigma=[0.00222839]
-prim_fdr:: Bump 2: w=-3.8281088, mu=[0.6915396], sigma=[0.00905106]
-prim_fdr:: Bump 3: w=-1.044569, mu=[1.0712328], sigma=[0.00068252]
-prim_fdr:: Bump 4: w=-2.767144, mu=[0.69448984], sigma=[0.00509282]
+prim_fdr:: Slope: a=[4.520297], b=[-8.914123]
+prim_fdr:: Bump 0: w=-1.9356061, mu=[0.89859813], sigma=[0.5309061]
+prim_fdr:: Bump 1: w=-1.7687935, mu=[1.1476167], sigma=[1.2314166]
+prim_fdr:: Bump 2: w=-3.4120429, mu=[0.65709335], sigma=[0.32906047]
+prim_fdr:: Bump 3: w=-1.1205915, mu=[1.1887493], sigma=[3.1631444]
+prim_fdr:: Bump 4: w=-2.2865405, mu=[0.81278807], sigma=[0.48493966]
 prim_fdr:: 
 
-prim_fdr:: ## iteration 2000
-prim_fdr:: n_rej: 5973
-prim_fdr:: n_rej sig: 5971
-prim_fdr:: FD esti mirror: 584.00000
-prim_fdr:: FD esti mirror sig: 595.48376
-prim_fdr:: loss1: -0.17841
+prim_fdr:: ## iteration 600
+prim_fdr:: n_rej: 6007
+prim_fdr:: n_rej sig: 5997
+prim_fdr:: FD esti mirror: 593.00000
+prim_fdr:: FD esti mirror sig: 599.11664
+prim_fdr:: loss1: -0.17918
 prim_fdr:: loss2: 0.00000
-prim_fdr:: Estimated FDP: 0.09972
+prim_fdr:: Estimated FDP: 0.09990
 prim_fdr:: FDP: 0.0
-prim_fdr:: Slope: a=[3.9711728], b=[-9.461599]
-prim_fdr:: Bump 0: w=-2.3329818, mu=[0.8261665], sigma=[0.00426941]
-prim_fdr:: Bump 1: w=-1.9526576, mu=[0.923479], sigma=[0.00222839]
-prim_fdr:: Bump 2: w=-3.7742023, mu=[0.69566447], sigma=[0.00905106]
-prim_fdr:: Bump 3: w=-1.0438659, mu=[1.0653622], sigma=[0.00068252]
-prim_fdr:: Bump 4: w=-2.7214298, mu=[0.6678954], sigma=[0.00509282]
+prim_fdr:: Slope: a=[4.565782], b=[-8.892317]
+prim_fdr:: Bump 0: w=-1.9321569, mu=[0.9230135], sigma=[0.5495192]
+prim_fdr:: Bump 1: w=-1.7687935, mu=[1.1476167], sigma=[1.2314166]
+prim_fdr:: Bump 2: w=-3.2957942, mu=[0.628946], sigma=[0.27197945]
+prim_fdr:: Bump 3: w=-1.1205915, mu=[1.1887493], sigma=[3.1631444]
+prim_fdr:: Bump 4: w=-2.303563, mu=[0.74645776], sigma=[0.43002546]
 prim_fdr:: 
 
-prim_fdr:: ## iteration 3000
-prim_fdr:: n_rej: 5985
-prim_fdr:: n_rej sig: 5982
-prim_fdr:: FD esti mirror: 586.00000
-prim_fdr:: FD esti mirror sig: 595.61450
-prim_fdr:: loss1: -0.17876
+prim_fdr:: ## iteration 900
+prim_fdr:: n_rej: 6001
+prim_fdr:: n_rej sig: 5995
+prim_fdr:: FD esti mirror: 587.00000
+prim_fdr:: FD esti mirror sig: 599.12866
+prim_fdr:: loss1: -0.17914
 prim_fdr:: loss2: 0.00000
-prim_fdr:: Estimated FDP: 0.09955
+prim_fdr:: Estimated FDP: 0.09993
 prim_fdr:: FDP: 0.0
-prim_fdr:: Slope: a=[4.0439963], b=[-9.449781]
-prim_fdr:: Bump 0: w=-2.2985582, mu=[0.8378479], sigma=[0.00426941]
-prim_fdr:: Bump 1: w=-1.9817834, mu=[0.94577485], sigma=[0.00222839]
-prim_fdr:: Bump 2: w=-3.7012665, mu=[0.67436737], sigma=[0.00905106]
-prim_fdr:: Bump 3: w=-1.0541066, mu=[1.082495], sigma=[0.00068252]
-prim_fdr:: Bump 4: w=-2.6708124, mu=[0.6792014], sigma=[0.00509282]
+prim_fdr:: Slope: a=[4.5669613], b=[-8.902632]
+prim_fdr:: Bump 0: w=-1.9536703, mu=[0.9294226], sigma=[0.5318939]
+prim_fdr:: Bump 1: w=-1.7687935, mu=[1.1476167], sigma=[1.2314166]
+prim_fdr:: Bump 2: w=-3.258947, mu=[0.65323627], sigma=[0.27445656]
+prim_fdr:: Bump 3: w=-1.1205915, mu=[1.1887493], sigma=[3.1631444]
+prim_fdr:: Bump 4: w=-2.280267, mu=[0.75140375], sigma=[0.39694563]
 prim_fdr:: 
 
-prim_fdr:: ## iteration 4000
-prim_fdr:: n_rej: 6052
-prim_fdr:: n_rej sig: 6048
-prim_fdr:: FD esti mirror: 589.00000
-prim_fdr:: FD esti mirror sig: 604.34387
-prim_fdr:: loss1: -0.18072
+prim_fdr:: ## iteration 1200
+prim_fdr:: n_rej: 6011
+prim_fdr:: n_rej sig: 6002
+prim_fdr:: FD esti mirror: 592.00000
+prim_fdr:: FD esti mirror sig: 599.46851
+prim_fdr:: loss1: -0.17935
 prim_fdr:: loss2: 0.00000
-prim_fdr:: Estimated FDP: 0.09991
+prim_fdr:: Estimated FDP: 0.09987
 prim_fdr:: FDP: 0.0
-prim_fdr:: Slope: a=[4.089329], b=[-9.461116]
-prim_fdr:: Bump 0: w=-2.1415567, mu=[0.8517366], sigma=[0.00426941]
-prim_fdr:: Bump 1: w=-2.1465523, mu=[0.96349275], sigma=[0.00222839]
-prim_fdr:: Bump 2: w=-3.5510178, mu=[0.6362679], sigma=[0.00905106]
-prim_fdr:: Bump 3: w=-1.054098, mu=[1.082305], sigma=[0.00068252]
-prim_fdr:: Bump 4: w=-2.601034, mu=[0.7255687], sigma=[0.00509282]
+prim_fdr:: Slope: a=[4.560954], b=[-8.921499]
+prim_fdr:: Bump 0: w=-1.9497347, mu=[0.92566854], sigma=[0.5199811]
+prim_fdr:: Bump 1: w=-1.7687935, mu=[1.1476167], sigma=[1.2314166]
+prim_fdr:: Bump 2: w=-3.2521617, mu=[0.6367591], sigma=[0.28917068]
+prim_fdr:: Bump 3: w=-1.1205915, mu=[1.1887493], sigma=[3.1631444]
+prim_fdr:: Bump 4: w=-2.3004298, mu=[0.75530624], sigma=[0.40882587]
 prim_fdr:: 
 
-benchmark_airway:: ## PF, n_rej=6064
-benchmark_airway:: ## Total time: 510.4s
+benchmark_airway:: ## PF, n_rej=6066
+benchmark_airway:: ## Total time: 60.0s

@@ -1,0 +1,86 @@
+data_loader:: ## Simulated data info: 2d_slope_bump, n_sample=10000 ##
+data_loader:: # Slope w=0.4: a=(2.0,0.0)
+data_loader:: # Bump1 w=0.3: mu=(0.2,0.2), sigma=(0.1,0.5)
+data_loader:: # Bump2 w=0.3: mu=(0.7,0.7), sigma=(0.1,0.1)
+
+prim_fdr:: ## Gradient check ##
+prim_fdr:: #  param value: mu=0.200, sigma=0.100
+prim_fdr:: #  Theoretical grad: dmu=33.09752, dsigma=185.05752
+prim_fdr:: #  Numerical grad: dmu=33.09752, dsigma=185.05749
+prim_fdr:: ## Gradient check ##
+prim_fdr:: #  param value: mu=0.200, sigma=0.100
+prim_fdr:: #  Theoretical grad: dmu=32.78222, dsigma=173.67013
+prim_fdr:: #  Numerical grad: dmu=32.78222, dsigma=173.67010
+unit_test_mixture_fit:: Total time: 0.023s
+
+unit_test_mixture_fit:: ## check ML_slope
+data_loader:: # a=(2.00,0.00)
+unit_test_mixture_fit:: # fitted slope parameter
+unit_test_mixture_fit:: # a=(2.0880,0.0314)
+unit_test_mixture_fit:: Total time: 0.006s
+
+unit_test_mixture_fit:: ## check f_slope
+unit_test_mixture_fit:: # True probability
+unit_test_mixture_fit:: # p=(0.3823,0.8509)
+unit_test_mixture_fit:: # Fitted probability
+unit_test_mixture_fit:: # p=(0.3823,0.8509)
+unit_test_mixture_fit:: Total time: 0.001s
+
+unit_test_mixture_fit:: ## check ML_bump
+data_loader:: # mu=(0.50,0.20)
+data_loader:: # sigma=(0.10,0.10)
+unit_test_mixture_fit:: # fitted bump parameter
+unit_test_mixture_fit:: # mu=(0.5000,0.2055)
+unit_test_mixture_fit:: # sigma=(0.1008,0.0941)
+unit_test_mixture_fit:: Total time: 0.007s
+
+unit_test_mixture_fit:: ## check f_bump
+unit_test_mixture_fit:: # True probability
+unit_test_mixture_fit:: # p=(2.0924,0.7697)
+unit_test_mixture_fit:: # Fitted probability
+unit_test_mixture_fit:: # p=(2.0924,0.7697)
+unit_test_mixture_fit:: Total time: 0.002s
+
+data_loader:: ## Simulated data info: 2d_slope_bump, n_sample=10000 ##
+data_loader:: # Slope w=0.4: a=(2.0,0.0)
+data_loader:: # Bump1 w=0.3: mu=(0.2,0.2), sigma=(0.1,0.5)
+data_loader:: # Bump2 w=0.3: mu=(0.7,0.7), sigma=(0.1,0.1)
+
+unit_test_mixture_fit:: ## mixture fit infomartion ##
+unit_test_mixture_fit:: # Slope w=0.497: a=(0.782,0.074), 
+unit_test_mixture_fit:: # Bump1 w=0.183:
+unit_test_mixture_fit::   mu=[0.19874586 0.39171133]
+unit_test_mixture_fit::   sigma=[0.07335803 0.23635685]
+unit_test_mixture_fit:: # Bump2 w=0.034:
+unit_test_mixture_fit::   mu=[0.48273337 0.17361269]
+unit_test_mixture_fit::   sigma=[1.         0.13040416]
+unit_test_mixture_fit:: # Bump3 w=0.286:
+unit_test_mixture_fit::   mu=[0.7113519  0.70122083]
+unit_test_mixture_fit::   sigma=[0.10456611 0.09426582]
+unit_test_mixture_fit:: Total time: 2.156s
+
+data_loader:: ## Simulated data info: 10d_slope_bump, n_sample=10000 ##
+data_loader:: # Slope w=0.4: a=(2.0,0.0)
+data_loader:: # Bump1 w=0.3: mu=(0.2,0.2), sigma=(0.1,0.5)
+data_loader:: # Bump2 w=0.3: mu=(0.7,0.7), sigma=(0.1,0.1)
+data_loader:: # Other dims are uniform
+
+unit_test_mixture_fit:: ## mixture fit infomartion ##
+unit_test_mixture_fit:: # Slope w=0.545: a=(0.686,0.021), 
+unit_test_mixture_fit:: # Bump1 w=0.139:
+unit_test_mixture_fit::   mu=[0.70262615 0.69629833 0.50632388 0.49924028 0.50480889 0.50346174
+ 0.26158643 0.50477742 0.50320558]
+unit_test_mixture_fit::   sigma=[0.08865194 0.09547795 1.         1.         1.         1.
+ 0.17962919 1.         1.        ]
+unit_test_mixture_fit:: # Bump2 w=0.183:
+unit_test_mixture_fit::   mu=[0.20207194 0.38778495 0.50281768 0.4988248  0.49588031 0.49766398
+ 0.49769365 0.50160043 0.49507493]
+unit_test_mixture_fit::   sigma=[0.07524512 0.23538545 1.         1.         1.         1.
+ 1.         1.         1.        ]
+unit_test_mixture_fit:: # Bump3 w=0.133:
+unit_test_mixture_fit::   mu=[0.71137893 0.6917359  0.49801462 0.49293486 0.50170916 0.50726687
+ 0.72748351 0.50736916 0.4887529 ]
+unit_test_mixture_fit::   sigma=[0.10211227 0.0943348  1.         1.         1.         1.
+ 0.18749617 1.         1.        ]
+unit_test_mixture_fit:: Total time: 3.614s
+

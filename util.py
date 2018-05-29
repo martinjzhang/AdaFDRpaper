@@ -95,9 +95,11 @@ def t_cal(x,a,b,w,mu,sigma):
         t = np.exp(x.dot(a)+b)
     for i in range(K):
         if len(x.shape)==1:
-            t += np.exp(w[i])*np.exp(-(x-mu[i])**2/sigma[i])
+            #t += np.exp(w[i])*np.exp(-(x-mu[i])**2/sigma[i])
+            t += np.exp(w[i])*np.exp(-(x-mu[i])**2*sigma[i])
         else:
-            t += np.exp(w[i])*np.exp(-np.sum((x-mu[i])**2/sigma[i],axis=1))
+            #t += np.exp(w[i])*np.exp(-np.sum((x-mu[i])**2/sigma[i],axis=1))
+            t += np.exp(w[i])*np.exp(-np.sum((x-mu[i])**2*sigma[i],axis=1))
     return t.clip(max=1)
     
 """ 
@@ -151,7 +153,7 @@ def plot_t(t,p,x,h=None,color=None,label=None):
             plt.scatter(x,p,alpha=0.1,color='royalblue')
         else:
             plt.scatter(x[h==0],p[h==0],alpha=0.1,color='royalblue')
-            plt.scatter(x[h==1],p[h==1],alpha=0.1,color='seegreen')
+            plt.scatter(x[h==1],p[h==1],alpha=0.1,color='seagreen')
         plt.plot(x[sort_idx],t[sort_idx],color=color,label=label)
         plt.ylim([0,2*t.max()])
             
@@ -171,6 +173,25 @@ def plot_t(t,p,x,h=None,color=None,label=None):
     #plt.ylim([0,1.2*t.max()])
     #plt.ylabel('t')
     #plt.xlabel('x')
+    
+def plot_scatter_t(t,p,x,h=None,color=None,label=None):
+    if color is None: color = 'darkorange'
+        
+    if t.shape[0]>5000:
+        rand_idx=np.random.permutation(x.shape[0])[0:5000]
+        t = t[rand_idx]
+        p = p[rand_idx]
+        x = x[rand_idx]
+        if h is not None: h = h[rand_idx]
+            
+    sort_idx = x.argsort()
+    if h is None:
+        plt.scatter(x,p,alpha=0.1,color='royalblue')
+    else:
+        plt.scatter(x[h==0],p[h==0],alpha=0.1,color='royalblue')
+        plt.scatter(x[h==1],p[h==1],alpha=0.3,color='seagreen')
+    plt.scatter(x[sort_idx],t[sort_idx],color=color,s=4,alpha=0.6,label=label)
+    plt.ylim([0,2*t.max()])
         
 def plot_data_1d(p,x,h,n_pt=1000):
     rnd_idx=np.random.permutation(p.shape[0])[0:n_pt]

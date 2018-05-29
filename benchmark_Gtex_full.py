@@ -7,9 +7,13 @@ import prim_fdr as pf
 import time
 import matplotlib.pyplot as plt
 
+import sys
+#outf = sys.argv[1]
+
 def main():
     ## create a new directory
     output_folder = './results/result_GTEx_full'
+    #output_folder = outf
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
@@ -29,7 +33,7 @@ def main():
     
     ## run the algorithm
     start_time = time.time()
-    n_rej,t,_=pf.PrimFDR(p,x,5,alpha=0.1,h=None,n_itr=5000,verbose=True,output_folder=output_folder,logger=logger)
+    n_rej,t,_=pf.PrimFDR(p,x,5,alpha=0.1,h=None,n_itr=1000,verbose=True,output_folder=output_folder,logger=logger)
     logger.info('## PF, n_rej=%d'%(n_rej))
     logger.info('## Total time: %0.1fs'%(time.time()-start_time))
     

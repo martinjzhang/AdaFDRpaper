@@ -192,89 +192,199 @@ def pfdr_test(data):
     print('pfdr_test start')
     p1,x1 = data[0]
     p2,x2 = data[1]
-    p3,x3 = data[2]
-    K,alpha,n_itr = data[3]
+    K,alpha,n_itr,output_folder,logger = data[2]
     print('PrimFDR start')
-    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=False)
+    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,output_folder=output_folder,logger=logger)
     a,b,w,mu,sigma,gamma = theta
     
     t2 = t_cal(x2,a,b,w,mu,sigma)
     gamma = rescale_mirror(t2,p2,alpha)
-    t3 = gamma*t_cal(x3,a,b,w,mu,sigma)
+    t2 = gamma*t2
     
-    return np.sum(p3<t3),t3,[a,b,w,mu,sigma,gamma]
+    return np.sum(p2<t2),t2,[a,b,w,mu,sigma,gamma]
+
+# old code
+    #print('pfdr_test start')
+    #p1,x1 = data[0]
+    #p2,x2 = data[1]
+    #p3,x3 = data[2]
+    #K,alpha,n_itr = data[3]
+    #print('PrimFDR start')
+    #_,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=False)
+    #a,b,w,mu,sigma,gamma = theta
+    #
+    #t2 = t_cal(x2,a,b,w,mu,sigma)
+    #gamma = rescale_mirror(t2,p2,alpha)
+    #t3 = gamma*t_cal(x3,a,b,w,mu,sigma)
+    #
+    #return np.sum(p3<t3),t3,[a,b,w,mu,sigma,gamma]
 
 ## fix it: change the wrapper to two-fold cv
-def PrimFDR_cv(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,reorder=True,h=None,core='s_core',verbose=False):
+def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
+               verbose=False,output_folder=None,logger=None):
     np.random.seed(42)
-    color_list = ['navy','orange','darkred']
-    x,_ = feature_preprocess(x,p,qt_norm=qt_norm,reorder=reorder)
-    n_sample = p.shape[0]
-    n_sub = int(n_sample/3)
-    d = 1 if len(x.shape)==1 else x.shape[1]
-    rand_idx = np.random.permutation(n_sample)
-    subidx_list=[rand_idx[0:n_sub],rand_idx[n_sub:2*n_sub],rand_idx[2*n_sub:]]
+    if len(x.shape) == 1: x = x.reshape([-1,1])
+    n_sample,d = x.shape
+    x = feature_preprocess(x,p,qt_norm=qt_norm)
     
+    ## random split the fold
+    n_sub = int(n_sample/2)
+    rand_idx = np.random.permutation(n_sample)
+    
+    fold_idx = np.zeros([n_sample],dtype=int)
+    fold_idx[rand_idx[0:n_sub]] = 0
+    fold_idx[rand_idx[n_sub:]] = 1
+        
     if verbose:
         start_time=time.time()
-        print('#time start: 0.0s')
+        if logger is None:
+            print('#time start: 0.0s')
+        else:
+            logger.info('#time start: 0.0s')
     
     ## construct the data
-    args = [K,alpha,n_itr]
+    args = [K,alpha,n_itr,output_folder,logger]
     data = {}
-    if d == 1:
-        for i in range(3): data[i] = [p[subidx_list[i]],x[subidx_list[i]]]
-    else:
-        for i in range(3): data[i] = [p[subidx_list[i]],x[subidx_list[i],:]]
+    for i in range(2): 
+        data[i] = [p[fold_idx==i],x[fold_idx==i]]
             
     Y_input = []    
-    Y_input.append([data[1],data[2],data[0],args])
-    Y_input.append([data[2],data[0],data[1],args])
-    Y_input.append([data[0],data[1],data[2],args])
-    if verbose: print('#time input: %0.4fs'%(time.time()-start_time))
+    Y_input.append([data[1],data[0],args])
+    Y_input.append([data[0],data[1],args])
+    if verbose: 
+        print('#time input: %0.4fs'%(time.time()-start_time))
+        logger.info('#time input: %0.4fs'%(time.time()-start_time))
     
-    if core == 'm_core':
-    ## multi-processing
-        pool = Pool(3)
-        res  = pool.map(pfdr_test, Y_input)
-        if verbose: print('#time mp: %0.4fs'%(time.time()-start_time))
+    ## fixit: multicore processing not work with pytorch        
+    res=[]
+    for i in range(2):
+        if verbose: 
+            print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+            logger.info('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+        res.append(pfdr_test(Y_input[i]))
         
-    ## single core 
-    else:
-        res=[]
-        for i in range(3):
-            if verbose: print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-            res.append(pfdr_test(Y_input[i]))
-        
-    if verbose: print('#time test: %0.4fs'%(time.time()-start_time))
-        
+    if verbose: 
+        print('#time test: %0.4fs'%(time.time()-start_time))
+        logger.info('#time test: %0.4fs'%(time.time()-start_time))
+    
+    ## Summarize the result
     theta = []
-    n_rej = []
-    t     = []
-    
-    for i in range(3):
+    n_rej = []    
+    t = np.zeros([n_sample],dtype=float)
+     
+    for i in range(2):
         n_rej.append(res[i][0])
-        t.append(res[i][1])
+        t[fold_idx==i] = res[i][1]
         theta.append(res[i][2])
     
     if verbose:
+        color_list = ['navy','orange']
+
         print('# total rejection: %d'%np.array(n_rej).sum(), n_rej)
+        #logger.info('# total rejection: %d'%np.array(n_rej).sum(), n_rej)
+        if h is not None:
+            tol_rej = np.sum(p<t)
+            false_rej = np.sum((p<t)*(h==0))
             
-        if d==1:
-            plt.figure(figsize=[18,5])
-            for i in range(3):
-                plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label='fold '+str(i+1))
-                #plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label=None)
+            logger.info('## Testing summary ##')
+            logger.info('# Total rejection: %d'%tol_rej)
+            logger.info('# False positive: %d'%false_rej)
+            logger.info('# FDP: %0.4f\n'%(false_rej/tol_rej))                  
+        
+        plt.figure(figsize=[18,12])
+        n_figure = min(d,4)
+        for i_dim in range(n_figure):        
+            plt.subplot(str(n_figure)+'1'+str(i_dim+1))
+            for i in range(2):
+                if h is not None:
+                    plot_scatter_t(t[fold_idx==i],p[fold_idx==i],x[fold_idx==i,i_dim],\
+                                   h[fold_idx==i],color=color_list[i],label='fold '+str(i+1)) 
+                else:
+                    plot_scatter_t(t[fold_idx==i],p[fold_idx==i],x[fold_idx==i,i_dim],\
+                                   h,color=color_list[i],label='fold '+str(i+1)) 
             plt.legend()
+            plt.title('Dimension %d'%(i_dim+1))
+
+        if output_folder is not None:
+            plt.savefig(output_folder+'/learned_threshold.png')
+        else:
             plt.show()
         print('#time total: %0.4fs'%(time.time()-start_time))     
     
-    return n_rej,t,theta    
+    return n_rej,t,theta  
+
+# old code: 
+#    np.random.seed(42)
+#    color_list = ['navy','orange']
+#    x,_ = feature_preprocess(x,p,qt_norm=qt_norm,reorder=reorder)
+#    n_sample = p.shape[0]
+#    n_sub = int(n_sample/2)
+#    d = 1 if len(x.shape)==1 else x.shape[1]
+#    rand_idx = np.random.permutation(n_sample)
+#    subidx_list=[rand_idx[0:n_sub],rand_idx[n_sub:2*n_sub],rand_idx[2*n_sub:]]
+#    
+#    if verbose:
+#        start_time=time.time()
+#        print('#time start: 0.0s')
+#    
+#    ## construct the data
+#    args = [K,alpha,n_itr]
+#    data = {}
+#    if d == 1:
+#        for i in range(3): data[i] = [p[subidx_list[i]],x[subidx_list[i]]]
+#    else:
+#        for i in range(3): data[i] = [p[subidx_list[i]],x[subidx_list[i],:]]
+#            
+#    Y_input = []    
+#    Y_input.append([data[1],data[2],data[0],args])
+#    Y_input.append([data[2],data[0],data[1],args])
+#    Y_input.append([data[0],data[1],data[2],args])
+#    if verbose: print('#time input: %0.4fs'%(time.time()-start_time))
+#    
+#    if core == 'm_core':
+#    ## multi-processing
+#        pool = Pool(3)
+#        res  = pool.map(pfdr_test, Y_input)
+#        if verbose: print('#time mp: %0.4fs'%(time.time()-start_time))
+#        
+#    ## single core 
+#    else:
+#        res=[]
+#        for i in range(3):
+#            if verbose: print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+#            res.append(pfdr_test(Y_input[i]))
+#        
+#    if verbose: print('#time test: %0.4fs'%(time.time()-start_time))
+#        
+#    theta = []
+#    n_rej = []
+#    t     = []
+#    
+#    for i in range(3):
+#        n_rej.append(res[i][0])
+#        t.append(res[i][1])
+#        theta.append(res[i][2])
+#    
+#    if verbose:
+#        print('# total rejection: %d'%np.array(n_rej).sum(), n_rej)
+#            
+#        if d==1:
+#            plt.figure(figsize=[18,5])
+#            for i in range(3):
+#                plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label='fold '+str(i+1))
+#                #plot_t(t[i],data[i][0],data[i][1],h,color=color_list[i],label=None)
+#            plt.legend()
+#            plt.show()
+#        print('#time total: %0.4fs'%(time.time()-start_time))     
+#    
+#    return n_rej,t,theta  
 
 def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',output_folder=None,logger=None):   
     ## feature preprocessing 
     torch.manual_seed(42)
-    d=1 if len(x.shape)==1 else x.shape[1]
+    if len(x.shape)==1:
+        x = x.reshape([-1,1])
+    d = x.shape[1]
     x = feature_preprocess(x,p,qt_norm=qt_norm)
     
     # rough threshold calculation using PrimFDR_init 
@@ -316,11 +426,12 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     lambda0 = Variable(torch.Tensor([lambda0]),requires_grad=False)
     lambda1 = Variable(torch.Tensor([lambda1]),requires_grad=False)
     p       = Variable(torch.from_numpy(p).float(),requires_grad=False)
-    x       = Variable(torch.from_numpy(x).float().view(-1,d),requires_grad=False)
-    a       = Variable(torch.Tensor([a]),requires_grad=True) if d == 1 else Variable(torch.Tensor(a),requires_grad=True)
+    #x       = Variable(torch.from_numpy(x).float().view(-1,d),requires_grad=False)
+    x       = Variable(torch.from_numpy(x).float(),requires_grad=False)
+    a       = Variable(torch.Tensor(a),requires_grad=True)
     b       = Variable(torch.Tensor([b]),requires_grad=True)
     w       = Variable(torch.Tensor(w),requires_grad=True)
-    mu      = Variable(torch.Tensor(mu).view(-1,d),requires_grad=True)
+    mu      = Variable(torch.Tensor(mu),requires_grad=True)
     #sigma = sigma.clip(min=1e-6)
     #sigma_mean = np.mean(1/sigma)
     #print(sigma_mean)
@@ -329,7 +440,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     sigma_mean = np.mean(sigma,axis=0)
     #sigma_mean = np.mean(sigma)
     print(sigma_mean)
-    sigma   = Variable(torch.Tensor(sigma / sigma_mean),requires_grad=True)
+    sigma   = Variable(torch.Tensor(sigma/sigma_mean),requires_grad=True)
     sigma_mean = Variable(torch.from_numpy(sigma_mean).float(),requires_grad=False)
     
     if verbose:
@@ -346,9 +457,24 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                 logger.info('# Bump %s: w=%s, mu=%s, sigma=%s'\
                             %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))
             logger.info('\n')
-        
+    ## 1    
+    #optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.02)
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[100,300,600],gamma=0.5)
+    
+    ## 2
+    #optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.05)
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[100,300,600],gamma=0.25)
+    
+    ## 3
+    #optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.02)
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[300],gamma=0.1)
+    
+    ## 4
+    #optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.05)
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[200],gamma=0.05)
+    
     optimizer = torch.optim.Adam([a,b,w,mu,sigma],lr=0.02)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.2)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[100,300,600],gamma=0.5)     
     optimizer.zero_grad()
     
     ## fix it: tune lambda1 to balance the gradient of the two losses
@@ -363,6 +489,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         loss1 = -torch.mean(torch.sigmoid(lambda0*(t-p)))
         #loss2 = lambda1*(torch.mean(t)*nr-alpha*torch.mean(torch.sigmoid(lambda0*(t-p)))).clamp(min=0)
         loss2 = lambda1*tf.relu(torch.mean(torch.sigmoid(lambda0*(t+p-1)))-alpha*torch.mean(torch.sigmoid(lambda0*(t-p))))
+        
         loss  = loss1+loss2
         
         ## backprop
@@ -536,13 +663,14 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
         plt.subplot(121)
         temp_hist,_,_=plt.hist(x,bins=50,weights=1/n_samp*50*np.ones([n_samp]))
         temp = np.linspace(0,1,101)
-        plt.plot(temp,f_all(temp,a,mu,sigma,w))
+        x_grid = temp.reshape([-1,1])
+        plt.plot(temp,f_all(x_grid,a,mu,sigma,w))
         plt.ylim([0,1.5*temp_hist.max()])
         plt.title('unweighted')
         plt.subplot(122)
         temp_hist,_,_=plt.hist(x,bins=50,weights=x_w/n_samp*50)
         temp = np.linspace(0,1,101)
-        plt.plot(temp,f_all(temp,a,mu,sigma,w))
+        plt.plot(temp,f_all(x_grid,a,mu,sigma,w))
         plt.ylim([-1e-3,1.5*temp_hist.max()])
         plt.title('weighted')
         plt.show()   
@@ -632,6 +760,7 @@ def ML_slope(x,w=None,c=0.01):
 
 ## slope density function
 def f_slope(x,a):
+    
     ## Probability (dimension-wise probability)    
     f_x = np.exp(x*a)
     ## Normalization factor
