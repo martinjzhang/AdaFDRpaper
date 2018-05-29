@@ -439,7 +439,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     
     sigma_mean = np.mean(sigma,axis=0)
     #sigma_mean = np.mean(sigma)
-    print(sigma_mean)
+    #print(sigma_mean)
     sigma   = Variable(torch.Tensor(sigma/sigma_mean),requires_grad=True)
     sigma_mean = Variable(torch.from_numpy(sigma_mean).float(),requires_grad=False)
     
