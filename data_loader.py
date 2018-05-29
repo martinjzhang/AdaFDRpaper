@@ -69,7 +69,10 @@ def load_toy_mixture(opt=0,logger=None):
     n_sample = 10000
     if opt==0: # 2d slope, generated according to the slope model
         a    = np.array([2,0],dtype=float)
-        print('slope parameter a = ',a) 
+        if logger is None:
+            print('slope parameter a = ',a) 
+        else:
+            logger.info('# a=(%0.2f,%0.2f)'%(a[0],a[1]))
         x,ng = grid_2d()
         p    = f_slope(x,a)
         p   /= p.sum()
@@ -79,8 +82,12 @@ def load_toy_mixture(opt=0,logger=None):
     elif opt==1: # 2d bump, generated according to the exact model   
         mu = np.array([0.5,0.2],dtype=float)
         sigma = np.array([0.1,0.1],dtype=float)
-        for i in range(mu.shape[0]):
-            print('mu=%0.4f, sigma=%0.4f'%(mu[i],sigma[i]))
+        if logger is None:
+            print('# mu=(%0.2f,%0.2f)'%(mu[0],mu[1]))
+            print('# sigma=(%0.2f,%0.2f)'%(sigma[0],sigma[1]))
+        else:
+            logger.info('# mu=(%0.2f,%0.2f)'%(mu[0],mu[1]))
+            logger.info('# sigma=(%0.2f,%0.2f)'%(sigma[0],sigma[1]))
         x,ng = grid_2d()
         p    = f_bump(x,mu,sigma)
         p   /= p.sum()
@@ -105,8 +112,7 @@ def load_toy_mixture(opt=0,logger=None):
             logger.info('## Simulated data info: 2d_slope_bump, n_sample=%d ##'%n_sample)
             logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
             logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
-            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
-            logger.info('\n')
+            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)\n'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
             
     elif opt==3: # 10d slope+bump in the first 2d
         w = [0.4,0.3,0.3]
@@ -130,8 +136,7 @@ def load_toy_mixture(opt=0,logger=None):
             logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
             logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
             logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
-            logger.info('# Other dims are uniform')
-            logger.info('\n')        
+            logger.info('# Other dims are uniform\n')
     else:
         pass
     
