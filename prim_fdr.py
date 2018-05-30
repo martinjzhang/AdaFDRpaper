@@ -243,7 +243,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
             logger.info('#time start: 0.0s')
     
     ## construct the data
-    args = [K,alpha,n_itr,output_folder,logger]
+    args = [K,alpha,n_itr,output_folder,None]
     data = {}
     for i in range(2): 
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
@@ -256,13 +256,17 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
         logger.info('#time input: %0.4fs'%(time.time()-start_time))
     
     ## fixit: multicore processing not work with pytorch        
-    res=[]
-    for i in range(2):
-        if verbose: 
-            print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-            logger.info('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-        res.append(pfdr_test(Y_input[i]))
-        
+    #res=[]
+    #for i in range(2):
+    #    if verbose:
+    #        print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+    #        logger.info('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
+    #    res.append(pfdr_test(Y_input[i]))
+
+
+    po = Pool(2)
+    res = po.map(pfdr_test, Y_input)
+
     if verbose: 
         print('#time test: %0.4fs'%(time.time()-start_time))
         logger.info('#time test: %0.4fs'%(time.time()-start_time))
@@ -293,15 +297,16 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
         
         plt.figure(figsize=[18,12])
         n_figure = min(d,4)
-        for i_dim in range(n_figure):        
+
+        for i_dim in range(n_figure):
             plt.subplot(str(n_figure)+'1'+str(i_dim+1))
             for i in range(2):
                 if h is not None:
                     plot_scatter_t(t[fold_idx==i],p[fold_idx==i],x[fold_idx==i,i_dim],\
-                                   h[fold_idx==i],color=color_list[i],label='fold '+str(i+1)) 
+                                   h[fold_idx==i],color=color_list[i],label='fold '+str(i+1))
                 else:
                     plot_scatter_t(t[fold_idx==i],p[fold_idx==i],x[fold_idx==i,i_dim],\
-                                   h,color=color_list[i],label='fold '+str(i+1)) 
+                                   h,color=color_list[i],label='fold '+str(i+1))
             plt.legend()
             plt.title('Dimension %d'%(i_dim+1))
 
