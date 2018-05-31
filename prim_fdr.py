@@ -22,10 +22,13 @@ import torch.nn.functional as tf
     verbose: bool, if generate ancillary information
     
     ----- output -----
-    
+    x: Processed feature stored as an n*d array. The discrete feature is reordered based on the alt/null ratio.
+    meta_info: a d*2 array. The first dimensional corresponds to the type of the feature (continuous/discrete). The second 
+               dimension is a list on the mapping (from small to large). For example, if the before reorder is [0.1,0.2,0.7].
+               This list may be [0.7,0.1,0.2].
 """ 
 
-def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=False,vis_dim=None,verbose=False):
+def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=False,vis_dim=None,verbose=False):
     def cal_meta_info(x,p):
         if np.unique(x).shape[0]<100:
             x_new,x_order_new = reorder_discrete_feature(x,p) 
@@ -58,7 +61,9 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=Fals
         return x_new,x_order_new
     
     x = x_.copy()
-    d=1 if len(x.shape)==1 else x.shape[1]   
+    if len(x.shape) == 1: x = x.reshape([-1,1])
+    _,d = x.shape
+    #d=1 if len(x.shape)==1 else x.shape[1]   
         
     ## feature visualization before preprocessing
     if verbose:
@@ -70,16 +75,13 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=Fals
     ## preprocesing
     # reorder the discrete features as well as calculating the meta information
     meta_info = []
-    if d==1:
-        x,temp_meta = cal_meta_info(x,p)
+    for i in range(d):
+        x[:,i],temp_meta = cal_meta_info(x[:,i],p)
         meta_info.append(temp_meta)
-    else:
-        for i in range(d):
-            x[:,i],temp_meta = cal_meta_info(x[:,i],p)
-            meta_info.append(temp_meta)
         
     # quantile normalization
-    if qt_norm: x=rank(x)
+    if qt_norm: 
+        x=rank(x,continue_rank=continue_rank)
         
     # scale to be between 0 and 1
     x = (x-x.min(axis=0))/(x.max(axis=0)-x.min(axis=0)) 
@@ -90,7 +92,7 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=Fals
         plot_x(x,vis_dim=vis_dim) 
         plt.show()
     
-    if return_metainfo:
+    if require_meta_info:
         return x,meta_info
     else:
         return x
@@ -102,7 +104,7 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,return_metainfo=Fals
     ----- output -----
     
 """
-def feature_explore(p,x,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
+def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
     def plot_feature_1d(x_null,x_alt,bins,meta_info,title='',cate_name=None):
         feature_type,cate_order = meta_info        
         if feature_type == 'continuous':         
@@ -159,29 +161,42 @@ def feature_explore(p,x,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
         plt.show()
     
     
-    d=1 if len(x.shape)==1 else x.shape[1]
+    #d=1 if len(x.shape)==1 else x.shape[1]
     ## preprocessing
-    x,meta_info = feature_preprocess(x,p,qt_norm=qt_norm,continue_rank=False,return_metainfo=True)   
+    x,meta_info = feature_preprocess(x_,p,qt_norm=qt_norm,continue_rank=False,require_meta_info=True)   
+    x_nq,meta_info = feature_preprocess(x_,p,qt_norm=False,continue_rank=False,require_meta_info=True)   
+    d = x.shape[1]
     
     ## separate the null proportion and the alternative proportion
     _,t_BH = bh(p,alpha=alpha)
     x_null,x_alt = x[p>0.5],x[p<t_BH]      
+    x_null_nq,x_alt_nq = x_nq[p>0.5],x_nq[p<t_BH]      
     
     ## generate the figure
-    bins = np.linspace(0,1,51)  
+    bins = np.linspace(0,1,26)  
     if vis_dim is None: vis_dim = np.arange(min(4,d))    
     
-    if d==1:       
-        if 0 in cate_name.keys():
-            plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1',cate_name=cate_name[0])
+    for i in vis_dim:
+        if meta_info[i][0] == 'continuous':
+            temp_null,temp_alt = x_null[:,i],x_alt[:,i]
         else:
-            plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1')
-    else: 
-        for i in vis_dim:
-            if i in cate_name.keys():
-                plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
-            else:
-                plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1))
+            temp_null,temp_alt = x_null_nq[:,i],x_alt_nq[:,i]
+        if i in cate_name.keys():
+            plot_feature_1d(temp_null,temp_alt,bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
+        else:
+            plot_feature_1d(temp_null,temp_alt,bins,meta_info[i],title='feature %s'%str(i+1))
+                
+    #if d==1:       
+    #    if 0 in cate_name.keys():
+    #        plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1',cate_name=cate_name[0])
+    #    else:
+    #        plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1')
+    #else: 
+    #    for i in vis_dim:
+    #        if i in cate_name.keys():
+    #            plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
+    #        else:
+    #            plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1))
     return
               
        
@@ -194,11 +209,12 @@ def pfdr_test(data):
     print('pfdr_test start')
     p1,x1 = data[0]
     p2,x2 = data[1]
-    K,alpha,n_itr,output_folder,logger = data[2]
+    K,alpha,n_itr,output_folder,logger,random_state = data[2]
     fold_number_str = data[3]
     print('PrimFDR start')
     _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,\
-                        output_folder=output_folder,logger=logger,fold_number_str=fold_number_str)
+                        output_folder=output_folder,logger=logger,fold_number_str=fold_number_str,\
+                        random_state=random_state)
     a,b,w,mu,sigma,gamma = theta
     
     t2 = t_cal(x2,a,b,w,mu,sigma)
@@ -225,7 +241,7 @@ def pfdr_test(data):
 
 ## fix it: change the wrapper to two-fold cv
 def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
-               verbose=False,output_folder=None,logger=None):
+               verbose=False,output_folder=None,logger=None,random_state=0):
     np.random.seed(42)
     if len(x.shape) == 1: x = x.reshape([-1,1])
     n_sample,d = x.shape
@@ -247,7 +263,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
             logger.info('#time start: 0.0s')
     
     ## construct the data
-    args = [K,alpha,n_itr,output_folder,None]
+    args = [K,alpha,n_itr,output_folder,None,random_state]
     data = {}
     for i in range(2): 
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
@@ -389,16 +405,18 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
 #    return n_rej,t,theta  
 
 def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',\
-            output_folder=None,logger=None,fold_number_str=''):   
+            output_folder=None,logger=None,fold_number_str='',random_state=0):   
     ## feature preprocessing 
-    torch.manual_seed(42)
+    torch.manual_seed(random_state)
     if len(x.shape)==1:
         x = x.reshape([-1,1])
     d = x.shape[1]
     x = feature_preprocess(x,p,qt_norm=qt_norm)
     
     # rough threshold calculation using PrimFDR_init 
-    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose,output_folder=output_folder,logger=logger) 
+    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose,\
+                                                    output_folder=output_folder,logger=logger,\
+                                                    random_state=random_state) 
 
     ## transform the parameters
     a     = a_init
@@ -577,9 +595,9 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
 """
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
-def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,logger=None):
+def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,logger=None,random_state=0):
     #x = feature_preprocess(x,p)## fix it: multiple places used this function
-    np.random.seed(42)
+    np.random.seed(random_state)
     if verbose: print('## PrimFDR_init starts')   
     if logger is not None: logger.info('## PrimFDR_init starts')   
             
@@ -591,7 +609,8 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
     if verbose: print('# Learning null distribution')
     if logger is not None: logger.info('# Learning null distribution')   
     w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,\
-                                                   verbose=verbose,logger=logger,output_folder=output_folder,suffix='_null')   
+                                                   verbose=verbose,logger=logger,output_folder=output_folder,\
+                                                   suffix='_null',random_state=random_state)   
     
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
@@ -622,7 +641,9 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
 """ 
     mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
 """
-def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,suffix=None):   
+def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,\
+                suffix=None,random_state=0):   
+    np.random.seed(random_state)
     if len(x.shape)==1: x = x.reshape([-1,1])
     n_samp,d = x.shape
     if x_w is None: x_w=np.ones([n_samp],dtype=float)
@@ -964,9 +985,15 @@ def bh(p,alpha=0.1,n_sample=None,verbose=False):
     return n_rej,t_rej
 
 def storey_bh(p,alpha=0.1,lamb=0.5,n_sample=None,verbose=False):
-    if n_sample is None: n_sample = p.shape[0]
+    if n_sample is None: 
+        n_sample = p.shape[0]
+    else:
+        lamb = np.min(p[p>0.5])
+        
     pi0_hat  = (np.sum(p>lamb)/(1-lamb)/n_sample).clip(max=1)  
     alpha   /= pi0_hat
+    print('pi0_hat',pi0_hat)
+    
     p_sort = sorted(p)
     n_rej = 0
     for i in range(p.shape[0]):

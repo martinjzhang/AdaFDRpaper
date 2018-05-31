@@ -8,23 +8,37 @@ import logging
 """
     calculate the dimension-wise rank statistics
     # fix it: for discrete features, it may be nice to keep their values the same
+    
+    ----- input  -----
+    x: an n*d array 
+    
+    ----- output -----
+    ranks: an n*d array, column-wise rank of x
 """
 def rank(x,continue_rank=True):
     ranks = np.empty_like(x)
-    if len(x.shape)==1:
-        if continue_rank:
-            temp = x.argsort(axis=0)       
-            ranks[temp] = np.arange(x.shape[0])
+    n,d = x.shape
+    for i in range(d):
+        if continue_rank:           
+            temp = x[:,i].argsort(axis=0)       
+            ranks[temp,i] = np.arange(n)
         else:
-            ranks = rankdata(x)
-            
-    else:
-        for i in range(x.shape[1]):
-            if continue_rank:           
-                temp = x[:,i].argsort(axis=0)       
-                ranks[temp,i] = np.arange(x.shape[0])
-            else:
-                ranks[:,i] = rankdata(x[:,i])
+            ranks[:,i] = rankdata(x[:,i])
+                
+    #if len(x.shape)==1:
+    #    if continue_rank:
+    #        temp = x.argsort(axis=0)       
+    #        ranks[temp] = np.arange(x.shape[0])
+    #    else:
+    #        ranks = rankdata(x)
+    #        
+    #else:
+    #    for i in range(x.shape[1]):
+    #        if continue_rank:           
+    #            temp = x[:,i].argsort(axis=0)       
+    #            ranks[temp,i] = np.arange(x.shape[0])
+    #        else:
+    #            ranks[:,i] = rankdata(x[:,i])
     return ranks
 
 

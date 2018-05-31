@@ -477,8 +477,13 @@ def load_GTEx_full(verbose=False):
 
     return p,x,n_full,cate_name
 
-def load_ukbb(verbose=False, use_other = False):
+
+""" 
+    load ukbb breast cancer 
+""" 
+def load_ukbb_breast_cancer(verbose=False, use_other=False):
     file_name='/data/ukbb_process/breast_cancer_filtered.csv'
+    file_name='/data/martin/breast_cancer_filtered.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
     if not use_other:
         x,p,n_full = X[:,0:2],X[:,-2],847800
@@ -487,7 +492,7 @@ def load_ukbb(verbose=False, use_other = False):
     
     #x[:,0],x[:,1] = np.log(x[:,0]+1), np.log(x[:,1]+1)
     if verbose:
-        print('## Load GTEx full data ##')
+        print('## Load ukbb breast cancer data ##')
         print('# all hypothesis: %d'%n_full)
         print('# filtered hypothesis: %d'%x.shape[0])
         for i in range(5):
