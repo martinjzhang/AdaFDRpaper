@@ -182,6 +182,8 @@ def feature_explore(p,x,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
                 plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
             else:
                 plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1))
+    return
+              
        
 """
     PrimFDR: the main testing function 
@@ -193,8 +195,10 @@ def pfdr_test(data):
     p1,x1 = data[0]
     p2,x2 = data[1]
     K,alpha,n_itr,output_folder,logger = data[2]
+    fold_number_str = data[3]
     print('PrimFDR start')
-    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,output_folder=output_folder,logger=logger)
+    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,\
+                        output_folder=output_folder,logger=logger,fold_number_str=fold_number_str)
     a,b,w,mu,sigma,gamma = theta
     
     t2 = t_cal(x2,a,b,w,mu,sigma)
@@ -249,8 +253,8 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
             
     Y_input = []    
-    Y_input.append([data[1],data[0],args])
-    Y_input.append([data[0],data[1],args])
+    Y_input.append([data[1],data[0],args,'_fold_0'])
+    Y_input.append([data[0],data[1],args,'_fold_1'])
     if verbose: 
         print('#time input: %0.4fs'%(time.time()-start_time))
         logger.info('#time input: %0.4fs'%(time.time()-start_time))
@@ -384,7 +388,8 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
 #    
 #    return n_rej,t,theta  
 
-def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',output_folder=None,logger=None):   
+def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',\
+            output_folder=None,logger=None,fold_number_str=''):   
     ## feature preprocessing 
     torch.manual_seed(42)
     if len(x.shape)==1:
@@ -525,7 +530,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                     plt.figure(figsize=[18,5])
                     plot_t(t.data.numpy(),p.data.numpy(),x.data.numpy(),h)
                     if output_folder is not None:
-                        plt.savefig(output_folder+'/threshold_itr_%d.png'%l)
+                        plt.savefig(output_folder+'/threshold_itr_%d%s.png'%(l,fold_number_str))
                     else:
                         plt.show()
                 print('\n')
@@ -552,7 +557,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
         plt.figure()
         plt.plot(np.log(loss_rec-loss_rec.min()+1e-3))
         if output_folder is not None:
-            plt.savefig(output_folder+'/loss.png')
+            plt.savefig(output_folder+'/loss%s.png'%fold_number_str)
         else:
             plt.show()       
         
