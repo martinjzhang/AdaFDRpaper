@@ -507,3 +507,9 @@ def load_ukbb_breast_cancer(verbose=False, use_other=False):
         cate_name = [cate_name,None, None, None, None, None]
         
     return p,x,n_full,cate_name
+
+def load_common_dataset(filename, n):
+    X = np.loadtxt(filename, skiprows=1, delimiter=',')
+    x, p, n_full = X[:, 0:-2], X[:, -2], n
+    cat_name = [None] * (x.shape[1])
+    return p, x, n_full, cat_name
