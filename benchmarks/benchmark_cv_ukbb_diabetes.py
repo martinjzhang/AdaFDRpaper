@@ -2,8 +2,8 @@ import matplotlib
 matplotlib.use('Agg')
 import logging
 import os
-import data_loader as dl
-import prim_fdr as pf
+import nfdr2.data_loader as dl
+import nfdr2.prim_fdr as pf
 import time
 import matplotlib.pyplot as plt
 

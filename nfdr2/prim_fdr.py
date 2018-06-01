@@ -4,7 +4,7 @@ from scipy import stats
 from sklearn.mixture import GaussianMixture
 import torch
 from torch.autograd import Variable
-from util import *
+from nfdr2.util import *
 from multiprocessing import Pool
 import logging
 import matplotlib.pyplot as plt

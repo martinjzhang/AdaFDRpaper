@@ -2,9 +2,9 @@ import numpy as np
 import scipy as sp
 from scipy import stats
 import matplotlib.pyplot as plt
-from util import *
+from nfdr2.util import *
 from matplotlib import mlab
-from prim_fdr import *
+from nfdr2.prim_fdr import *
 import logging
 
 
