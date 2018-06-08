@@ -104,8 +104,9 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=Fa
     ----- output -----
     
 """
-def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
-    def plot_feature_1d(x_null,x_alt,bins,meta_info,title='',cate_name=None):
+def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={},output_folder=None,h=None):
+    def plot_feature_1d(x_margin,p,x_null,x_alt,bins,meta_info,title='',cate_name=None,\
+                        output_folder=None,h=None):
         feature_type,cate_order = meta_info        
         if feature_type == 'continuous':         
             ## continuous feature: using kde to estimate 
@@ -113,8 +114,10 @@ def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
             x_grid = (bins+(bins[1]-bins[0])/2)[0:-1]
             p_null,_ = np.histogram(x_null,bins=bins) 
             p_alt,_= np.histogram(x_alt,bins=bins)         
-            p_null = (p_null+1)/np.sum(p_null+1)*n_bin
-            p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin
+            #p_null = (p_null+1)/np.sum(p_null+1)*n_bin
+            p_null = p_null/np.sum(p_null)*n_bin
+            #p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin
+            p_alt = p_alt/np.sum(p_alt)*n_bin
             kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
             kde_alt = stats.gaussian_kde(x_alt).evaluate(x_grid)
             p_ratio = (kde_alt+1e-2)/(kde_null+1e-2)        
@@ -126,8 +129,10 @@ def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
             unique_val = np.array(list(set(list(unique_null)+list(unique_alt))))
             unique_val = np.sort(unique_val)            
             p_null,p_alt = np.zeros([unique_val.shape[0]]),np.zeros([unique_val.shape[0]])          
-            for i,key in enumerate(unique_null): p_null[unique_val==key] = cts_null[i]                
-            for i,key in enumerate(unique_alt): p_alt[unique_val==key] = cts_alt[i]           
+            for i,key in enumerate(unique_null): 
+                p_null[unique_val==key] = cts_null[i]                
+            for i,key in enumerate(unique_alt): 
+                p_alt[unique_val==key] = cts_alt[i]           
             n_bin = unique_val.shape[0]           
             p_null = (p_null+1)/np.sum(p_null+1)*n_bin
             p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
@@ -141,27 +146,42 @@ def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
                 for i in cate_order:
                     cate_name_.append(cate_name[i])
                     
-        plt.figure(figsize=[18,5])
-        plt.subplot(121)
+        plt.figure(figsize=[8,8])
+        plt.subplot(311)
+        rnd_idx=np.random.permutation(p.shape[0])[0:np.min([10000,p.shape[0]])]
+        p = p[rnd_idx]
+        x_margin = x_margin[rnd_idx]
+        if h is not None:
+            plt.scatter(x_margin[h==1],p[h==1],color='orange',alpha=0.3,s=4,label='alt')
+            plt.scatter(x_margin[h==0],p[h==0],color='royalblue',alpha=0.3,s=4,label='null')
+        else:
+            plt.scatter(x_margin,p,color='royalblue',alpha=0.3,s=4,label='alt')
+        
+        plt.ylabel('p-value')
+        plt.title(title+' (%s)'%feature_type)
+        plt.subplot(312)
         plt.bar(x_grid,p_null,width=1/n_bin,color='royalblue',alpha=0.6,label='null')
         plt.bar(x_grid,p_alt,width=1/n_bin,color='darkorange',alpha=0.6,label='alt')
         plt.xlim([0,1])
-        if feature_type=='discrete': plt.xticks(x_grid,cate_name_,rotation=45)
-        plt.title('estimated null/alt proportion')
+        if feature_type=='discrete': 
+            plt.xticks(x_grid,cate_name_,rotation=45)
+        plt.ylabel('null/alt proportion')
         plt.legend()
-        plt.subplot(122)
+        plt.subplot(313)
         if feature_type == 'continuous':
             plt.plot(x_grid,p_ratio,color='seagreen',label='ratio',linewidth=4) 
         else:
             plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
             plt.xticks(x_grid,cate_name_,rotation=45)
         plt.xlim([0,1])
-        plt.title('ratio')
-        plt.suptitle(title+' (%s)'%feature_type)
+        plt.ylabel('ratio')
+        plt.xlabel('Covariate $x$')
+        plt.tight_layout()
+        if output_folder is not None:
+            plt.savefig(output_folder+'/explore_%s.png'%title)
         plt.show()
     
     
-    #d=1 if len(x.shape)==1 else x.shape[1]
     ## preprocessing
     x,meta_info = feature_preprocess(x_,p,qt_norm=qt_norm,continue_rank=False,require_meta_info=True)   
     x_nq,meta_info = feature_preprocess(x_,p,qt_norm=False,continue_rank=False,require_meta_info=True)   
@@ -174,35 +194,26 @@ def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={}):
     
     ## generate the figure
     bins = np.linspace(0,1,26)  
-    if vis_dim is None: vis_dim = np.arange(min(4,d))    
+    if vis_dim is None: 
+        vis_dim = np.arange(min(4,d))    
     
     for i in vis_dim:
+        x_margin = x[:,vis_dim]
         if meta_info[i][0] == 'continuous':
             temp_null,temp_alt = x_null[:,i],x_alt[:,i]
         else:
             temp_null,temp_alt = x_null_nq[:,i],x_alt_nq[:,i]
         if i in cate_name.keys():
-            plot_feature_1d(temp_null,temp_alt,bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
+            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
+                            cate_name=cate_name[i],output_folder=output_folder,h=h)
         else:
-            plot_feature_1d(temp_null,temp_alt,bins,meta_info[i],title='feature %s'%str(i+1))
-                
-    #if d==1:       
-    #    if 0 in cate_name.keys():
-    #        plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1',cate_name=cate_name[0])
-    #    else:
-    #        plot_feature_1d(x_null,x_alt,bins,meta_info[0],title='feature 1')
-    #else: 
-    #    for i in vis_dim:
-    #        if i in cate_name.keys():
-    #            plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1),cate_name=cate_name[i])
-    #        else:
-    #            plot_feature_1d(x_null[:,i],x_alt[:,i],bins,meta_info[i],title='feature %s'%str(i+1))
+            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
+                            output_folder=output_folder,h=h)
     return
               
        
 """
     PrimFDR: the main testing function 
-    fix: add the cross validation wrapper     
 """
 
 def pfdr_test(data):  
@@ -210,10 +221,10 @@ def pfdr_test(data):
     p1,x1 = data[0]
     p2,x2 = data[1]
     K,alpha,n_itr,output_folder,logger,random_state = data[2]
-    fold_number_str = data[3]
+    fold_number = data[3]
     print('PrimFDR start')
     _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,\
-                        output_folder=output_folder,logger=logger,fold_number_str=fold_number_str,\
+                        output_folder=output_folder,logger=logger,fold_number=fold_number,\
                         random_state=random_state)
     a,b,w,mu,sigma,gamma = theta
     
@@ -261,7 +272,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
             print('#time start: 0.0s')
         else:
             logger.info('#time start: 0.0s')
-    
+
     ## construct the data
     args = [K,alpha,n_itr,output_folder,None,random_state]
     data = {}
@@ -269,8 +280,8 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
             
     Y_input = []    
-    Y_input.append([data[1],data[0],args,'_fold_0'])
-    Y_input.append([data[0],data[1],args,'_fold_1'])
+    Y_input.append([data[1],data[0],args,0])
+    Y_input.append([data[0],data[1],args,1])
     if verbose: 
         print('#time input: %0.4fs'%(time.time()-start_time))
         logger.info('#time input: %0.4fs'%(time.time()-start_time))
@@ -315,7 +326,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
             logger.info('# False positive: %d'%false_rej)
             logger.info('# FDP: %0.4f\n'%(false_rej/tol_rej))                  
         
-        plt.figure(figsize=[18,12])
+        plt.figure(figsize=[8,12])
         n_figure = min(d,4)
 
         for i_dim in range(n_figure):
@@ -405,7 +416,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
 #    return n_rej,t,theta  
 
 def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug='',\
-            output_folder=None,logger=None,fold_number_str='',random_state=0):   
+            output_folder=None,logger=None,fold_number=0,random_state=0):   
     ## feature preprocessing 
     torch.manual_seed(random_state)
     if len(x.shape)==1:
@@ -416,7 +427,7 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
     # rough threshold calculation using PrimFDR_init 
     w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose,\
                                                     output_folder=output_folder,logger=logger,\
-                                                    random_state=random_state) 
+                                                    random_state=random_state,fold_number=fold_number) 
 
     ## transform the parameters
     a     = a_init
@@ -545,10 +556,10 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                           %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))             
                                                                       
                 if d==1:
-                    plt.figure(figsize=[18,5])
+                    plt.figure(figsize=[8,5])
                     plot_t(t.data.numpy(),p.data.numpy(),x.data.numpy(),h)
                     if output_folder is not None:
-                        plt.savefig(output_folder+'/threshold_itr_%d%s.png'%(l,fold_number_str))
+                        plt.savefig(output_folder+'/threshold_itr_%d_fold_%d.png'%(l,fold_number))
                     else:
                         plt.show()
                 print('\n')
@@ -572,10 +583,10 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
                                     %(str(k),str(w.data.numpy()[k]),mu.data.numpy()[k],sigma.data.numpy()[k]))    
                     logger.info('\n')                  
     if verbose:
-        plt.figure()
+        plt.figure(figsize=[6,5])
         plt.plot(np.log(loss_rec-loss_rec.min()+1e-3))
         if output_folder is not None:
-            plt.savefig(output_folder+'/loss%s.png'%fold_number_str)
+            plt.savefig(output_folder+'/loss_fold_%d.png'%fold_number)
         else:
             plt.show()       
         
@@ -595,7 +606,8 @@ def PrimFDR(p,x,K=2,alpha=0.1,n_itr=5000,qt_norm=True,h=None,verbose=False,debug
 """
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
-def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,logger=None,random_state=0):
+def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,\
+                 logger=None,random_state=0,fold_number=0):
     #x = feature_preprocess(x,p)## fix it: multiple places used this function
     np.random.seed(random_state)
     if verbose: print('## PrimFDR_init starts')   
@@ -610,7 +622,7 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
     if logger is not None: logger.info('# Learning null distribution')   
     w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,\
                                                    verbose=verbose,logger=logger,output_folder=output_folder,\
-                                                   suffix='_null',random_state=random_state)   
+                                                   suffix='_null',random_state=random_state,fold_number=fold_number)   
     
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
@@ -618,7 +630,8 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
     if verbose: print('# Learning alternative distribution')
     if logger is not None: logger.info('# Learning alternative distribution') 
     w,a,mu,sigma = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose,\
-                               logger=logger,output_folder=output_folder,suffix='_alt')
+                               logger=logger,output_folder=output_folder,suffix='_alt',\
+                               fold_number=fold_number)
     
     if verbose:        
         t = f_all(x,a,mu,sigma,w)
@@ -642,7 +655,7 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
     mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
 """
 def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,\
-                suffix=None,random_state=0):   
+                suffix=None,random_state=0,fold_number=0):   
     np.random.seed(random_state)
     if len(x.shape)==1: x = x.reshape([-1,1])
     n_samp,d = x.shape
@@ -690,7 +703,7 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
             print('Bump %s: w=%s, mu=%s, sigma=%s'%(str(k),str(w[k+1]),mu[k],sigma[k]))
         print('\n')
     if d==1 and verbose:        
-        plt.figure(figsize=[18,5])
+        plt.figure(figsize=[8,5])
         plt.subplot(121)
         temp_hist,_,_=plt.hist(x,bins=50,weights=1/n_samp*50*np.ones([n_samp]))
         temp = np.linspace(0,1,101)
@@ -711,7 +724,7 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
         x_grid = bins_.reshape([-1,1])
         
         if d==1:
-            plt.figure(figsize=[18,5])
+            plt.figure(figsize=[8,5])
             plt.hist(x,bins=bins_,weights=x_w/np.sum(x_w)*100)    
             temp_p = np.zeros(bins_.shape[0])
             temp_p += w[0]*f_slope(x_grid,a)
@@ -719,10 +732,10 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
                 temp_p += w[i]*f_bump(x_grid,mu[i-1],sigma[i-1])
             plt.plot(bins_,temp_p)
 
-            plt.savefig(output_folder+'/projection%s.png'%(suffix))
+            plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))
         
         else:
-            plt.figure(figsize=[18,12])
+            plt.figure(figsize=[8,12])
             n_figure = min(d,4)
             for i_dim in range(n_figure):        
                 plt.subplot(str(n_figure)+'1'+str(i_dim+1))
@@ -733,7 +746,7 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
                     temp_p += w[i]*f_bump(x_grid,mu[i-1,[i_dim]],sigma[i-1,[i_dim]])
                 plt.plot(bins_,temp_p)
                 plt.title('Dimension %d'%(i_dim+1))
-            plt.savefig(output_folder+'/projection%s.png'%(suffix))
+            plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))
         plt.close('all')
     return w,a,mu,sigma
 
@@ -992,7 +1005,7 @@ def storey_bh(p,alpha=0.1,lamb=0.5,n_sample=None,verbose=False):
         
     pi0_hat  = (np.sum(p>lamb)/(1-lamb)/n_sample).clip(max=1)  
     alpha   /= pi0_hat
-    print('pi0_hat',pi0_hat)
+    print('## pi0_hat=%0.3f'%pi0_hat)
     
     p_sort = sorted(p)
     n_rej = 0
