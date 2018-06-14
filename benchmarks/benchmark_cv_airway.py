@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 
 def main():
     ## create a new directory
-    output_folder = './results/cv_result_airway'
+    output_folder = '../results/cv_result_airway'
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
     logging.basicConfig(level=logging.DEBUG,
-        format='%(module)s:: %(message)s',
+        format='%(module)s:: %(message)s',ß
         filename=output_folder+'/result.log', filemode='w')
     logger = logging.getLogger()
     

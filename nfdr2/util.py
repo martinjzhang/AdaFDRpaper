@@ -24,79 +24,69 @@ def rank(x,continue_rank=True):
             ranks[temp,i] = np.arange(n)
         else:
             ranks[:,i] = rankdata(x[:,i])
-                
-    #if len(x.shape)==1:
-    #    if continue_rank:
-    #        temp = x.argsort(axis=0)       
-    #        ranks[temp] = np.arange(x.shape[0])
-    #    else:
-    #        ranks = rankdata(x)
-    #        
-    #else:
-    #    for i in range(x.shape[1]):
-    #        if continue_rank:           
-    #            temp = x[:,i].argsort(axis=0)       
-    #            ranks[temp,i] = np.arange(x.shape[0])
-    #        else:
-    #            ranks[:,i] = rankdata(x[:,i])
     return ranks
-
-
-#"""
-#    tell if a feature is discrete or continuous 
-#    return: a np_array boolean with dimension d
-#            1: discrete, 0: continuous
-#"""
-#def if_discrete(x):
-#    d=1 if len(x.shape)==1 else x.shape[1]
-#    feature_type = np.zeros([d],dtype=bool)
-#    if d==1:    
 
 """
     rescale to have the mirror estimate below level alpha
 """
-def rescale_mirror(t,p,alpha):
+def rescale_mirror(t,p,alpha,f_write=None,title=''):
+    if f_write is not None:
+        f_write.write('\n## rescale_mirror: %s\n'%title)
+        #f_write.write('# quantile of t (1,25,75,99): %s\n'%(np.percentile(t,[1,25,75,99])))
+    
+    # first rescale t to a sensible region, accounts for different range of t
     t_999 = np.percentile(t,99.9)
     if t.clip(max=t_999).mean()>0.2:
-        gamma1 = 0.2/t.clip(max=np.percentile(t,99.9)).mean()
+        gamma1 = 0.2/t.clip(max=t_999).mean()
     else: 
         gamma1=1
     t = t*gamma1
+    if f_write is not None:
+        f_write.write('# quantile of t (1,25,75,99): %s\n'%(np.percentile(t,[1,25,75,99])))
+        f_write.write('# gamma1=%0.4f\n'%gamma1)
     
-    #print('gamma1',gamma1)
+    # binary search
     gamma_l = 0
     gamma_u = 0.2/np.mean(t)
     gamma_m = (gamma_u+gamma_l)/2
     
-    while gamma_u-gamma_l>1e-8 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
+    while gamma_u-gamma_l>1e-4 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
         gamma_m = (gamma_l+gamma_u)/2
-        #print(gamma_l,gamma_u,np.sum(p<t*gamma_m),np.sum(p>1-t*gamma_m),(np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m))
-        if (np.sum(p>1-t*gamma_m))/np.sum(p<t*gamma_m) < alpha:
+        D_hat = np.sum(p<t*gamma_m)
+        FD_hat = np.sum(p>1-t*gamma_m)
+        alpha_hat = FD_hat/D_hat
+         
+        if f_write is not None:
+            f_write.write('# gamma_l=%0.4f, gamma_u=%0.4f, D_hat=%d, FD_hat=%d, alpha_hat=%0.4f\n'%\
+                         (gamma_l,gamma_u,D_hat,FD_hat,alpha_hat))
+        if alpha_hat < alpha:
             gamma_l = gamma_m
         else: 
             gamma_u = gamma_m
-            
+    
+    if f_write is not None:
+        f_write.write('# final output: gamma=%0.4f\n'%((gamma_u+gamma_l)/2*gamma1))
     return (gamma_u+gamma_l)/2*gamma1 
 
-"""
-    rescale to have the mean-t estimate below level alpha 
-    this is not used here 
-"""
-
-def rescale_naive(t,p,alpha,nr=1,verbose=False):
-    print('### rescale_naive ###')
-    gamma_l = 0
-    gamma_u = 1/np.mean(t)
-    gamma_m = (gamma_l+gamma_u)/2
-    while gamma_u-gamma_l>1e-8 or (np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m)>alpha):
-        print(gamma_l,gamma_u,np.sum(t*gamma_m)*nr,np.sum(p<t*gamma_m))
-        gamma_m = (gamma_l+gamma_u)/2
-        if np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m) < alpha:
-            gamma_l = gamma_m
-        else: 
-            gamma_u = gamma_m
-    print('\n')
-    return (gamma_u+gamma_l)/2
+#"""
+#    rescale to have the mean-t estimate below level alpha 
+#    this is not used here 
+#"""
+#
+#def rescale_naive(t,p,alpha,nr=1,verbose=False):
+#    print('### rescale_naive ###')
+#    gamma_l = 0
+#    gamma_u = 1/np.mean(t)
+#    gamma_m = (gamma_l+gamma_u)/2
+#    while gamma_u-gamma_l>1e-8 or (np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m)>alpha):
+#        print(gamma_l,gamma_u,np.sum(t*gamma_m)*nr,np.sum(p<t*gamma_m))
+#        gamma_m = (gamma_l+gamma_u)/2
+#        if np.sum(t*gamma_m)*nr/np.sum(p<t*gamma_m) < alpha:
+#            gamma_l = gamma_m
+#        else: 
+#            gamma_u = gamma_m
+#    print('\n')
+#    return (gamma_u+gamma_l)/2
         
 """
     calculate the threshold based on the learned mixture: trend+bump
@@ -119,24 +109,25 @@ def t_cal(x,a,b,w,mu,sigma):
 """ 
     summary the result based on the predicted value and the true value 
 """ 
-def result_summary(pred,h,logger=None):
+def result_summary(pred,h,logger=None,f_write=None):
+    
     if h is not None: 
         print("# Num of alternatives:",np.sum(h))
     print("# Num of discovery:",np.sum(pred))
     if logger is not None:
         logger.info('# n_rej=%d'%np.sum(pred))
+    if f_write is not None:
+        f_write.write('# n_rej=%d\n'%np.sum(pred))
     if h is not None: 
-        print("# Num of true discovery:",np.sum(pred * h))
-        print("# Actual FDP:", 1-np.sum(pred * h) / np.sum(pred))
-    print('\n')
-    
-## summary functions 
-#def evaluation(p,t,h):
-#    print("### Testing Summary ###")
-#    print("# rejections: %s"%str(np.sum(p<t)))
-#    print('FDP: %s'%str( np.sum((h==0)*(p<t)/np.sum(p<t))))
-#    print("### End Summary ###\n")
-
+        print("# Num of true discovery: %d"%np.sum(pred*h))
+        print("# Actual FDP: %0.3f"%(1-np.sum(pred * h) / np.sum(pred)))
+        if f_write is not None:
+            f_write.write("# Num of true discovery: %d\n"%np.sum(pred*h))
+            f_write.write("# Actual FDP: %0.3f\n"%(1-np.sum(pred * h) / np.sum(pred)))     
+    print('')
+    if f_write is not None:
+        f_write.write('\n')
+    return
 
 """
     basic functions for visualization
@@ -174,7 +165,7 @@ def plot_t(t,p,x,h=None,color=None,label=None):
     else:
         n_plot = min(x.shape[1],4)
         for i in range(n_plot):
-            plt.subplot('1'+str(n_plot)+str(i+1))
+            plt.subplot(str(n_plot)+'1'+str(i+1))
             sort_idx=x[:,i].argsort()
             if h is None:
                 plt.scatter(x[:,i],p,alpha=0.1)

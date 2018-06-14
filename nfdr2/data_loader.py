@@ -420,7 +420,7 @@ def load_airway(verbose=False):
     x=X[:,0]
     p=X[:,1]    
     if verbose:
-        print('## airway data ##')
+        print('## load airway data')
         print('# hypothesis: %s'%str(x.shape[0]))
         for i in range(5):
             print('p=%s, x=%s'%(str(p[i]),str(x[i])))
@@ -473,9 +473,12 @@ def load_GTEx_full(verbose=False):
         
     cate_name = {'Art': 0, 'Ctcf': 1, 'CtcfO': 2, 'DnaseD': 3, 'DnaseU': 4, 'Elon': 5, 'ElonW': 6, 'Enh': 7, 'EnhF': 8, 'EnhW': 9, 'EnhWF': 10, 'FaireW': 11, "Gen3'": 12, "Gen5'": 13, 'H4K20': 14, 'Low': 15, 'Pol2': 16, 'PromF': 17, 'PromP': 18, 'Quies': 19, 'Repr': 20, 'ReprD': 21, 'ReprW': 22, 'Tss': 23, 'TssF': 24}
     cate_name = {v: k for k, v in cate_name.items()}
-    cate_name = [None,None,None,cate_name]
+    
+    cate_name_dic = {}
+    cate_name_dic[3] = cate_name
+    #cate_name = [None,None,None,cate_name]
 
-    return p,x,n_full,cate_name
+    return p,x,n_full,cate_name_dic
 
 
 """ 
@@ -497,19 +500,32 @@ def load_ukbb_breast_cancer(verbose=False, use_other=False):
         print('# filtered hypothesis: %d'%x.shape[0])
         for i in range(5):
             print('# p=%s, x=%s'%(str(p[i]),str(x[i])))
-        print('\n')
+        print('')
         
     cate_name = {'Art': 0, 'Ctcf': 1, 'CtcfO': 2, 'DnaseD': 3, 'DnaseU': 4, 'Elon': 5, 'ElonW': 6, 'Enh': 7, 'EnhF': 8, 'EnhW': 9, 'EnhWF': 10, 'FaireW': 11, "Gen3'": 12, "Gen5'": 13, 'H4K20': 14, 'Low': 15, 'Pol2': 16, 'PromF': 17, 'PromP': 18, 'Quies': 19, 'Repr': 20, 'ReprD': 21, 'ReprW': 22, 'Tss': 23, 'TssF': 24}
     cate_name = {v: k for k, v in cate_name.items()}
-    if not use_other:
-        cate_name = [cate_name,None]
-    else:
-        cate_name = [cate_name,None, None, None, None, None]
+    
+    cate_name_dic = {}
+    cate_name_dic[3] = cate_name
+    #if not use_other:
+    #    cate_name = [cate_name,None]
+    #else:
+    #    cate_name = [cate_name,None, None, None, None, None]
         
-    return p,x,n_full,cate_name
+    return p,x,n_full,cate_name_dic
 
-def load_common_dataset(filename, n):
+def load_common_dataset(filename,n,verbose=True):
     X = np.loadtxt(filename, skiprows=1, delimiter=',')
-    x, p, n_full = X[:, 0:-2], X[:, -2], n
-    cat_name = [None] * (x.shape[1])
+    x,p,n_full = X[:, 0:-2], X[:, -2], n
+    #cat_name = [None] * (x.shape[1])
+    cat_name = {}
+    
+    if verbose:
+        print('## Load ukbb %s ##'%filename)
+        print('# all hypothesis: %d'%n_full)
+        print('# filtered hypothesis: %d'%x.shape[0])
+        for i in range(5):
+            print('# p=%s, x=%s'%(str(p[i]),str(x[i])))
+        print('')
+        
     return p, x, n_full, cat_name
