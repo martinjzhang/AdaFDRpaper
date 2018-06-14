@@ -76,7 +76,7 @@ def cal_meta_info(x,p):
         
 def reorder_discrete_feature(x,p):
     ## separate the null and the alt proportion
-    _,t_BH = bh(p,alpha=0.1)
+    _,t_BH = bh(p,alpha=0.1) # fixit: where is n_full
     x_null,x_alt = x[p>0.5],x[p<t_BH]  
     x_val = np.unique(x)
     ## calculate the ratio
@@ -104,7 +104,7 @@ def reorder_discrete_feature(x,p):
     ----- output -----
     
 """
-def feature_explore(p,x_,alpha=0.1,vis_dim=None,cate_name={},output_folder=None,h=None,log_transform=False):
+def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_folder=None,h=None,log_transform=False):
     def plot_feature_1d(x_margin,p,x_null,x_alt,meta_info,title='',cate_name=None,\
                         output_folder=None,h=None):
         feature_type,cate_order = meta_info       
@@ -191,6 +191,8 @@ def feature_explore(p,x_,alpha=0.1,vis_dim=None,cate_name={},output_folder=None,
         plt.show()
         
     x = x_.copy()
+    if n_full is None: 
+        n_full = p.shape[0]
     if len(x.shape) == 1: 
         x = x.reshape([-1,1])
     _,d = x.shape
@@ -207,8 +209,8 @@ def feature_explore(p,x_,alpha=0.1,vis_dim=None,cate_name={},output_folder=None,
                 x[:,i] = -np.log10(x[:,i].clip(min=1e-20))
     
     ## separate the null proportion and the alternative proportion
-    _,t_BH = bh(p,alpha=alpha)
-    x_null,x_alt = x[p>0.5],x[p<t_BH]      
+    _,t_BH = bh(p,n_full=n_full,alpha=0.1)
+    x_null,x_alt = x[p>0.75],x[p<t_BH]      
     
     ## generate the figure
     if vis_dim is None: 
@@ -339,7 +341,7 @@ def pfdr_test(data):
     print('pfdr_test start')
     p1,x1 = data[0]
     p2,x2 = data[1]
-    K,alpha,n_itr,output_folder,logger,random_state = data[2]
+    K,alpha,n_full,n_itr,output_folder,logger,random_state = data[2]
     fold_number = data[3]
     
     fname = output_folder+'/record_fold_%d.txt'%fold_number
@@ -347,7 +349,7 @@ def pfdr_test(data):
     f_write.write('### record for fold_%d\n'%fold_number)
         
     print('PrimFDR start')
-    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_itr=n_itr,verbose=True,\
+    _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_full=n_full,n_itr=n_itr,verbose=True,\
                         output_folder=output_folder,logger=logger,fold_number=fold_number,\
                         random_state=random_state,f_write=f_write)
     a,b,w,mu,sigma,gamma = theta
@@ -362,9 +364,9 @@ def pfdr_test(data):
     f_write.close()
     return np.sum(p2<t2),t2,[a,b,w,mu,sigma,gamma]
 
-def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
+def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
                verbose=False,output_folder=None,logger=None,random_state=0):
-    np.random.seed(42)
+    np.random.seed(random_state)
     if len(x.shape) == 1: 
         x = x.reshape([-1,1])
     n_sample,d = x.shape
@@ -373,10 +375,13 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
     ## random split the fold
     n_sub = int(n_sample/2)
     rand_idx = np.random.permutation(n_sample)
+    n_full = int(n_full/2)
     
     fold_idx = np.zeros([n_sample],dtype=int)
     fold_idx[rand_idx[0:n_sub]] = 0
     fold_idx[rand_idx[n_sub:]] = 1
+    
+    # 10 layers
         
     if verbose:
         start_time=time.time()
@@ -386,7 +391,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
             logger.info('#time start: 0.0s')
 
     ## construct the data
-    args = [K,alpha,n_itr,output_folder,None,random_state]
+    args = [K,alpha,n_full,n_itr,output_folder,None,random_state]
     data = {}
     for i in range(2): 
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
@@ -397,15 +402,6 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
     if verbose: 
         print('#time input: %0.4fs'%(time.time()-start_time))
         logger.info('#time input: %0.4fs'%(time.time()-start_time))
-    
-    ## fixit: multicore processing not work with pytorch        
-    #res=[]
-    #for i in range(2):
-    #    if verbose:
-    #        print('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-    #        logger.info('## testing fold %d: %0.4fs'%((i+1),time.time()-start_time))
-    #    res.append(pfdr_test(Y_input[i]))
-
 
     po = Pool(2)
     res = po.map(pfdr_test, Y_input)
@@ -459,7 +455,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_itr=1000,qt_norm=True,h=None,\
     
     return n_rej,t,theta   
 
-def PrimFDR(p,x,K=5,alpha=0.1,n_itr=1500,qt_norm=True,h=None,verbose=False,debug='',\
+def PrimFDR(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,qt_norm=True,h=None,verbose=False,debug='',\
             output_folder=None,logger=None,fold_number=0,random_state=0,f_write=None):   
      
     ## feature preprocessing 
@@ -469,8 +465,14 @@ def PrimFDR(p,x,K=5,alpha=0.1,n_itr=1500,qt_norm=True,h=None,verbose=False,debug
     d = x.shape[1]
     #x = feature_preprocess(x,p,qt_norm=qt_norm)
     
+    if f_write is not None:
+        f_write.write('# n_sample=%d\n'%(x.shape[0]))
+        for i in [1e-6,1e-5,1e-4,5e-4]:
+            f_write.write('# p<%0.6f: %d\n'%(i,np.sum(p<i)))
+        f_write.write('\n')
+    
     # rough threshold calculation using PrimFDR_init 
-    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,verbose=verbose,\
+    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,n_full=n_full,verbose=verbose,\
                                                     output_folder=output_folder,logger=logger,\
                                                     random_state=random_state,fold_number=fold_number,\
                                                     f_write=f_write) 
@@ -700,7 +702,7 @@ def PrimFDR(p,x,K=5,alpha=0.1,n_itr=1500,qt_norm=True,h=None,verbose=False,debug
 """
     initialization function of PrimFDR: fit the mixture model with a linear trend and a Gaussian mixture 
 """
-def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=None,\
+def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,output_folder=None,\
                  logger=None,random_state=0,fold_number=0,f_write=None):
     #x = feature_preprocess(x,p)
     np.random.seed(random_state)
@@ -714,10 +716,16 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_itr=100,h=None,verbose=False,output_folder=No
     if len(x.shape)==1: 
         x = x.reshape([-1,1])
     n_samp,d = x.shape
+    if n_full is None:
+        n_full = n_samp
             
     ## extract the null and the alternative proportion
-    _,t_BH = bh(p,alpha=alpha)
-    x_null,x_alt = x[p>0.5],x[p<t_BH]
+    _,t_BH = bh(p,n_full=n_full,alpha=0.1)
+    x_null,x_alt = x[p>0.75],x[p<t_BH]
+    
+    if f_write is not None:
+        f_write.write('# t_BH=%0.6f, n_null=%d, n_alt=%d\n'%(t_BH, x_null.shape[0],x_alt.shape[0]))
+    
     
     ## fit the null distribution
     if verbose: 
@@ -1132,12 +1140,13 @@ def f_all(x,a,mu,sigma,w):
 '''
     baseline comparison methods
 '''
-def bh(p,alpha=0.1,n_sample=None,verbose=False):
-    if n_sample is None: n_sample = p.shape[0]
+def bh(p,alpha=0.1,n_full=None,verbose=False):
+    if n_full is None: 
+        n_full = p.shape[0]
     p_sort   = sorted(p)
     n_rej    = 0
     for i in range(p.shape[0]):
-        if p_sort[i] < i*alpha/n_sample:
+        if p_sort[i] < i*alpha/n_full:
             n_rej = i
     t_rej = p_sort[n_rej]
     if verbose:
@@ -1147,20 +1156,20 @@ def bh(p,alpha=0.1,n_sample=None,verbose=False):
         print("\n")
     return n_rej,t_rej
 
-def storey_bh(p,alpha=0.1,lamb=0.5,n_sample=None,verbose=False):
-    if n_sample is None: 
-        n_sample = p.shape[0]
+def storey_bh(p,alpha=0.1,lamb=0.5,n_full=None,verbose=False):
+    if n_full is None: 
+        n_full = p.shape[0]
     else:
         lamb = np.min(p[p>0.5])
         
-    pi0_hat  = (np.sum(p>lamb)/(1-lamb)/n_sample).clip(max=1)  
+    pi0_hat  = (np.sum(p>lamb)/(1-lamb)/n_full).clip(max=1)  
     alpha   /= pi0_hat
     print('## pi0_hat=%0.3f'%pi0_hat)
     
     p_sort = sorted(p)
     n_rej = 0
     for i in range(p.shape[0]):
-        if p_sort[i] < i*alpha/n_sample:
+        if p_sort[i] < i*alpha/n_full:
             n_rej = i
     t_rej = p_sort[n_rej]
     if verbose:
