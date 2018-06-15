@@ -66,18 +66,25 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=Fa
         return x,meta_info
     else:
         return x
-    
+
+"""
+    Tell if a feature is continuous or discrete. If discrete, reorder the feature
+"""
 def cal_meta_info(x,p):
     if np.unique(x).shape[0]<100:
         x_new,x_order_new = reorder_discrete_feature(x,p) 
         return x_new,['discrete',x_order_new]
     else: 
         return x,['continuous',None]  
-        
-def reorder_discrete_feature(x,p):
+
+"""
+    Reorder the discrete feature in an acsending order according to the alt/null ratio
+""" 
+    
+def reorder_discrete_feature(x,p,n_full=None):
     ## separate the null and the alt proportion
-    _,t_BH = bh(p,alpha=0.1) # fixit: where is n_full
-    x_null,x_alt = x[p>0.5],x[p<t_BH]  
+    _,t_BH = bh(p,alpha=0.1,n_full=n_full) # fixit: where is n_full
+    x_null,x_alt = x[p>0.75],x[p<t_BH]  
     x_val = np.unique(x)
     ## calculate the ratio
     cts_null = np.zeros([x_val.shape[0]],dtype=int)
@@ -183,6 +190,8 @@ def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_
             plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
             plt.xticks(x_grid,cate_name_,rotation=45)
         plt.xlim([x_min,x_max])
+        y_min,y_max = plt.ylim()
+        plt.ylim([0,y_max])
         plt.ylabel('ratio')
         plt.xlabel('Covariate $x$')
         plt.tight_layout()
@@ -225,112 +234,6 @@ def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_
             plot_feature_1d(x_margin,p,temp_null,temp_alt,meta_info[i],title='feature_%s'%str(i+1),\
                             output_folder=output_folder,h=h)
     return
-
-#def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={},output_folder=None,h=None):
-#    def plot_feature_1d(x_margin,p,x_null,x_alt,bins,meta_info,title='',cate_name=None,\
-#                        output_folder=None,h=None):
-#        feature_type,cate_order = meta_info        
-#        if feature_type == 'continuous':         
-#            ## continuous feature: using kde to estimate 
-#            n_bin = bins.shape[0]-1
-#            x_grid = (bins+(bins[1]-bins[0])/2)[0:-1]
-#            p_null,_ = np.histogram(x_null,bins=bins) 
-#            p_alt,_= np.histogram(x_alt,bins=bins)         
-#            p_null = p_null/np.sum(p_null)*n_bin
-#            p_alt = p_alt/np.sum(p_alt)*n_bin
-#            kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
-#            kde_alt = stats.gaussian_kde(x_alt).evaluate(x_grid)
-#            p_ratio = (kde_alt+1e-2)/(kde_null+1e-2)        
-#                 
-#        else: 
-#            ## discrete feature: directly use the empirical counts 
-#            unique_null,cts_null = np.unique(x_null,return_counts=True)
-#            unique_alt,cts_alt = np.unique(x_alt,return_counts=True)            
-#            unique_val = np.array(list(set(list(unique_null)+list(unique_alt))))
-#            unique_val = np.sort(unique_val)            
-#            p_null,p_alt = np.zeros([unique_val.shape[0]]),np.zeros([unique_val.shape[0]])          
-#            for i,key in enumerate(unique_null): 
-#                p_null[unique_val==key] = cts_null[i]                
-#            for i,key in enumerate(unique_alt): 
-#                p_alt[unique_val==key] = cts_alt[i]           
-#            n_bin = unique_val.shape[0]           
-#            p_null = (p_null+1)/np.sum(p_null+1)*n_bin
-#            p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
-#            p_ratio = (p_alt+1e-2)/(p_null+1e-2)  
-#            x_grid = (np.arange(unique_val.shape[0])+1)/(unique_val.shape[0]+1)
-#            
-#            if cate_name is None: 
-#                cate_name_ = cate_order
-#            else:
-#                cate_name_ = []
-#                for i in cate_order:
-#                    cate_name_.append(cate_name[i])
-#                    
-#        plt.figure(figsize=[8,8])
-#        plt.subplot(311)
-#        rnd_idx=np.random.permutation(p.shape[0])[0:np.min([10000,p.shape[0]])]
-#        p = p[rnd_idx]
-#        x_margin = x_margin[rnd_idx]
-#        
-#        if h is not None:
-#            plt.scatter(x_margin[h==1],p[h==1],color='orange',alpha=0.3,s=4,label='alt')
-#            plt.scatter(x_margin[h==0],p[h==0],color='royalblue',alpha=0.3,s=4,label='null')
-#        else:
-#            plt.scatter(x_margin,p,color='royalblue',alpha=0.3,s=4,label='alt')
-#        plt.ylim([0,(p[p<0.5].max())])
-#        plt.ylabel('p-value')
-#        plt.title(title+' (%s)'%feature_type)
-#        plt.subplot(312)
-#        plt.bar(x_grid,p_null,width=1/n_bin,color='royalblue',alpha=0.6,label='null')
-#        plt.bar(x_grid,p_alt,width=1/n_bin,color='darkorange',alpha=0.6,label='alt')
-#        plt.xlim([0,1])
-#        if feature_type=='discrete': 
-#            plt.xticks(x_grid,cate_name_,rotation=45)
-#        plt.ylabel('null/alt proportion')
-#        plt.legend()
-#        plt.subplot(313)
-#        if feature_type == 'continuous':
-#            plt.plot(x_grid,p_ratio,color='seagreen',label='ratio',linewidth=4) 
-#        else:
-#            plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
-#            plt.xticks(x_grid,cate_name_,rotation=45)
-#        plt.xlim([0,1])
-#        plt.ylabel('ratio')
-#        plt.xlabel('Covariate $x$')
-#        plt.tight_layout()
-#        if output_folder is not None:
-#            plt.savefig(output_folder+'/explore_%s.png'%title)
-#        plt.show()
-#    
-#    
-#    ## preprocessing
-#    x,meta_info = feature_preprocess(x_,p,qt_norm=qt_norm,continue_rank=False,require_meta_info=True)   
-#    x_nq,meta_info = feature_preprocess(x_,p,qt_norm=False,continue_rank=False,require_meta_info=True)   
-#    d = x.shape[1]
-#    
-#    ## separate the null proportion and the alternative proportion
-#    _,t_BH = bh(p,alpha=alpha)
-#    x_null,x_alt = x[p>0.5],x[p<t_BH]      
-#    x_null_nq,x_alt_nq = x_nq[p>0.5],x_nq[p<t_BH]      
-#    
-#    ## generate the figure
-#    bins = np.linspace(0,1,26)  
-#    if vis_dim is None: 
-#        vis_dim = np.arange(min(4,d))    
-#    
-#    for i in vis_dim:
-#        x_margin = x[:,i]
-#        if meta_info[i][0] == 'continuous':
-#            temp_null,temp_alt = x_null[:,i],x_alt[:,i]
-#        else:
-#            temp_null,temp_alt = x_null_nq[:,i],x_alt_nq[:,i]
-#        if i in cate_name.keys():
-#            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
-#                            cate_name=cate_name[i],output_folder=output_folder,h=h)
-#        else:
-#            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
-#                            output_folder=output_folder,h=h)
-#    return
               
        
 """
@@ -380,9 +283,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
     fold_idx = np.zeros([n_sample],dtype=int)
     fold_idx[rand_idx[0:n_sub]] = 0
     fold_idx[rand_idx[n_sub:]] = 1
-    
-    # 10 layers
-        
+            
     if verbose:
         start_time=time.time()
         if logger is None:
@@ -937,29 +838,6 @@ def ML_slope(x,w=None,c=0.01):
         a_u[temp>=t] = a_m[temp>=t]
     return (a_u+a_l)/2
 
-# old code
-    #def ML_slope_1d(x,w=None,c=0.05):
-    #    if w is None:
-    #        w = np.ones(x.shape[0])        
-    #    t = np.sum(w*x)/np.sum(w) ## sufficient statistic
-    #    a_u=100
-    #    a_l=-100
-    #    ## binary search 
-    #    while a_u-a_l>0.1:
-    #        a_m  = (a_u+a_l)/2
-    #        a_m += 1e-2*(a_m==0)
-    #        if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t:
-    #            a_l = a_m
-    #        else: 
-    #            a_u = a_m
-    #    return (a_u+a_l)/2
-    #
-    #a = np.zeros(x.shape[1],dtype=float)
-    #for i in range(x.shape[1]):
-    #    a[i] = ML_slope_1d(x[:,i],w,c=c)
-    #return a
-    
-
 ## slope density function
 def f_slope(x,a):
     
@@ -1184,3 +1062,133 @@ def storey_bh(p,alpha=0.1,lamb=0.5,n_full=None,verbose=False):
 """
     some old code
 """ 
+
+
+## old code for feature_explore
+#def feature_explore(p,x_,alpha=0.1,qt_norm=False,vis_dim=None,cate_name={},output_folder=None,h=None):
+#    def plot_feature_1d(x_margin,p,x_null,x_alt,bins,meta_info,title='',cate_name=None,\
+#                        output_folder=None,h=None):
+#        feature_type,cate_order = meta_info        
+#        if feature_type == 'continuous':         
+#            ## continuous feature: using kde to estimate 
+#            n_bin = bins.shape[0]-1
+#            x_grid = (bins+(bins[1]-bins[0])/2)[0:-1]
+#            p_null,_ = np.histogram(x_null,bins=bins) 
+#            p_alt,_= np.histogram(x_alt,bins=bins)         
+#            p_null = p_null/np.sum(p_null)*n_bin
+#            p_alt = p_alt/np.sum(p_alt)*n_bin
+#            kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
+#            kde_alt = stats.gaussian_kde(x_alt).evaluate(x_grid)
+#            p_ratio = (kde_alt+1e-2)/(kde_null+1e-2)        
+#                 
+#        else: 
+#            ## discrete feature: directly use the empirical counts 
+#            unique_null,cts_null = np.unique(x_null,return_counts=True)
+#            unique_alt,cts_alt = np.unique(x_alt,return_counts=True)            
+#            unique_val = np.array(list(set(list(unique_null)+list(unique_alt))))
+#            unique_val = np.sort(unique_val)            
+#            p_null,p_alt = np.zeros([unique_val.shape[0]]),np.zeros([unique_val.shape[0]])          
+#            for i,key in enumerate(unique_null): 
+#                p_null[unique_val==key] = cts_null[i]                
+#            for i,key in enumerate(unique_alt): 
+#                p_alt[unique_val==key] = cts_alt[i]           
+#            n_bin = unique_val.shape[0]           
+#            p_null = (p_null+1)/np.sum(p_null+1)*n_bin
+#            p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
+#            p_ratio = (p_alt+1e-2)/(p_null+1e-2)  
+#            x_grid = (np.arange(unique_val.shape[0])+1)/(unique_val.shape[0]+1)
+#            
+#            if cate_name is None: 
+#                cate_name_ = cate_order
+#            else:
+#                cate_name_ = []
+#                for i in cate_order:
+#                    cate_name_.append(cate_name[i])
+#                    
+#        plt.figure(figsize=[8,8])
+#        plt.subplot(311)
+#        rnd_idx=np.random.permutation(p.shape[0])[0:np.min([10000,p.shape[0]])]
+#        p = p[rnd_idx]
+#        x_margin = x_margin[rnd_idx]
+#        
+#        if h is not None:
+#            plt.scatter(x_margin[h==1],p[h==1],color='orange',alpha=0.3,s=4,label='alt')
+#            plt.scatter(x_margin[h==0],p[h==0],color='royalblue',alpha=0.3,s=4,label='null')
+#        else:
+#            plt.scatter(x_margin,p,color='royalblue',alpha=0.3,s=4,label='alt')
+#        plt.ylim([0,(p[p<0.5].max())])
+#        plt.ylabel('p-value')
+#        plt.title(title+' (%s)'%feature_type)
+#        plt.subplot(312)
+#        plt.bar(x_grid,p_null,width=1/n_bin,color='royalblue',alpha=0.6,label='null')
+#        plt.bar(x_grid,p_alt,width=1/n_bin,color='darkorange',alpha=0.6,label='alt')
+#        plt.xlim([0,1])
+#        if feature_type=='discrete': 
+#            plt.xticks(x_grid,cate_name_,rotation=45)
+#        plt.ylabel('null/alt proportion')
+#        plt.legend()
+#        plt.subplot(313)
+#        if feature_type == 'continuous':
+#            plt.plot(x_grid,p_ratio,color='seagreen',label='ratio',linewidth=4) 
+#        else:
+#            plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
+#            plt.xticks(x_grid,cate_name_,rotation=45)
+#        plt.xlim([0,1])
+#        plt.ylabel('ratio')
+#        plt.xlabel('Covariate $x$')
+#        plt.tight_layout()
+#        if output_folder is not None:
+#            plt.savefig(output_folder+'/explore_%s.png'%title)
+#        plt.show()
+#    
+#    
+#    ## preprocessing
+#    x,meta_info = feature_preprocess(x_,p,qt_norm=qt_norm,continue_rank=False,require_meta_info=True)   
+#    x_nq,meta_info = feature_preprocess(x_,p,qt_norm=False,continue_rank=False,require_meta_info=True)   
+#    d = x.shape[1]
+#    
+#    ## separate the null proportion and the alternative proportion
+#    _,t_BH = bh(p,alpha=alpha)
+#    x_null,x_alt = x[p>0.5],x[p<t_BH]      
+#    x_null_nq,x_alt_nq = x_nq[p>0.5],x_nq[p<t_BH]      
+#    
+#    ## generate the figure
+#    bins = np.linspace(0,1,26)  
+#    if vis_dim is None: 
+#        vis_dim = np.arange(min(4,d))    
+#    
+#    for i in vis_dim:
+#        x_margin = x[:,i]
+#        if meta_info[i][0] == 'continuous':
+#            temp_null,temp_alt = x_null[:,i],x_alt[:,i]
+#        else:
+#            temp_null,temp_alt = x_null_nq[:,i],x_alt_nq[:,i]
+#        if i in cate_name.keys():
+#            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
+#                            cate_name=cate_name[i],output_folder=output_folder,h=h)
+#        else:
+#            plot_feature_1d(x_margin,p,temp_null,temp_alt,bins,meta_info[i],title='feature_%s'%str(i+1),\
+#                            output_folder=output_folder,h=h)
+#    return
+
+    #def ML_slope_1d(x,w=None,c=0.05):
+    #    if w is None:
+    #        w = np.ones(x.shape[0])        
+    #    t = np.sum(w*x)/np.sum(w) ## sufficient statistic
+    #    a_u=100
+    #    a_l=-100
+    #    ## binary search 
+    #    while a_u-a_l>0.1:
+    #        a_m  = (a_u+a_l)/2
+    #        a_m += 1e-2*(a_m==0)
+    #        if (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)<t:
+    #            a_l = a_m
+    #        else: 
+    #            a_u = a_m
+    #    return (a_u+a_l)/2
+    #
+    #a = np.zeros(x.shape[1],dtype=float)
+    #for i in range(x.shape[1]):
+    #    a[i] = ML_slope_1d(x[:,i],w,c=c)
+    #return a
+    
