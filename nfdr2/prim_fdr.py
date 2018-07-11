@@ -9,6 +9,7 @@ from multiprocessing import Pool
 import logging
 import matplotlib.pyplot as plt
 import torch.nn.functional as tf
+import time
 #from torch.multiprocessing import Pool
 
 np.set_printoptions(precision=4,suppress=True)
@@ -30,9 +31,10 @@ np.set_printoptions(precision=4,suppress=True)
                This list may be [0.7,0.1,0.2].
 """ 
 
-def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=False,vis_dim=None,verbose=False):   
+def feature_preprocess(x_,qt_norm=True,continue_rank=True,vis_dim=None,verbose=False):   
     x = x_.copy()
-    if len(x.shape) == 1: x = x.reshape([-1,1])
+    if len(x.shape) == 1: 
+        x = x.reshape([-1,1])
     _,d = x.shape
         
     ## feature visualization before preprocessing
@@ -41,14 +43,7 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=Fa
         plt.suptitle('before feature_preprocess')
         plot_x(x,vis_dim=vis_dim)       
         plt.show()                
-    
-    ## preprocesing
-    # reorder the discrete features as well as calculating the meta information
-    meta_info = []
-    for i in range(d):
-        x[:,i],temp_meta = cal_meta_info(x[:,i],p)
-        meta_info.append(temp_meta)
-        
+            
     # quantile normalization
     if qt_norm: 
         x=rank(x,continue_rank=continue_rank)
@@ -60,35 +55,77 @@ def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=Fa
         plt.figure(figsize=[18,5])
         plt.suptitle('after feature_preprocess')
         plot_x(x,vis_dim=vis_dim) 
+        plt.tight_layout()
         plt.show()
+        
+    return x
     
-    if require_meta_info:
-        return x,meta_info
-    else:
-        return x
+#def feature_preprocess(x_,p,qt_norm=True,continue_rank=True,require_meta_info=False,vis_dim=None,verbose=False):   
+#    x = x_.copy()
+#    if len(x.shape) == 1: x = x.reshape([-1,1])
+#    _,d = x.shape
+#        
+#    ## feature visualization before preprocessing
+#    if verbose:
+#        plt.figure(figsize=[18,5])
+#        plt.suptitle('before feature_preprocess')
+#        plot_x(x,vis_dim=vis_dim)       
+#        plt.show()                
+#    
+#    ## preprocesing
+#    # reorder the discrete features as well as calculating the meta information
+#    meta_info = []
+#    for i in range(d):
+#        x[:,i],temp_meta = cal_meta_info(x[:,i],p)
+#        meta_info.append(temp_meta)
+#        
+#    # quantile normalization
+#    if qt_norm: 
+#        x=rank(x,continue_rank=continue_rank)
+#               
+#    # scale to be between 0 and 1
+#    x = (x-x.min(axis=0))/(x.max(axis=0)-x.min(axis=0)) 
+#    
+#    if verbose:
+#        plt.figure(figsize=[18,5])
+#        plt.suptitle('after feature_preprocess')
+#        plot_x(x,vis_dim=vis_dim) 
+#        plt.show()
+#    
+#    if require_meta_info:
+#        return x,meta_info
+#    else:
+#        return x
 
 """
     Tell if a feature is continuous or discrete. If discrete, reorder the feature
 """
-def cal_meta_info(x,p):
+#def cal_meta_info(x,p):
+#    if np.unique(x).shape[0]<100:
+#        x_new,x_order_new = reorder_discrete_feature(x,p) 
+#        return x_new,['discrete',x_order_new]
+#    else: 
+#        return x,['continuous',None]  
+    
+def get_feature_type(x):
     if np.unique(x).shape[0]<100:
-        x_new,x_order_new = reorder_discrete_feature(x,p) 
-        return x_new,['discrete',x_order_new]
+        return 'discrete'
     else: 
-        return x,['continuous',None]  
+        return 'continuous'
 
 """
     Reorder the discrete feature in an acsending order according to the alt/null ratio
 """ 
-    
-def reorder_discrete_feature(x,p,n_full=None):
+
+def get_order_discrete(x,p,x_val,n_full=None):
     ## separate the null and the alt proportion
-    _,t_BH = bh(p,alpha=0.1,n_full=n_full) # fixit: where is n_full
+    _,t_BH = bh(p,alpha=0.1,n_full=n_full)
     x_null,x_alt = x[p>0.75],x[p<t_BH]  
-    x_val = np.unique(x)
+    n_val = x_val.shape[0]
+    
     ## calculate the ratio
-    cts_null = np.zeros([x_val.shape[0]],dtype=int)
-    cts_alt  = np.zeros([x_val.shape[0]],dtype=int)
+    cts_null = np.zeros([n_val],dtype=int)
+    cts_alt  = np.zeros([n_val],dtype=int)
     for i,val in enumerate(x_val):
         cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
     p_null  = (cts_null+1)/np.sum(cts_null+1)
@@ -96,13 +133,63 @@ def reorder_discrete_feature(x,p,n_full=None):
     p_ratio = p_alt/p_null 
         
     ## resort according to the ratio
-    idx_sort    = p_ratio.argsort()
-    x_new       = np.copy(x)
-    x_order_new = []
-    for i in range(x_val.shape[0]):
-        x_new[x==x_val[idx_sort[i]]] = x_val[i]   
-        x_order_new.append(idx_sort[i])
-    return x_new,x_order_new
+    x_order = p_ratio.argsort()
+    return x_order
+
+def reorder_discrete(x,x_val,x_order):
+    x_new = np.copy(x)
+    n_val = x_val.shape[0]
+    for i in range(n_val):
+        x_new[x==x_val[x_order[i]]] = x_val[i]   
+    return x_new
+
+
+#def reorder_discrete_feature_beta(x,p,x_val,n_full=None):
+#    ## separate the null and the alt proportion
+#    _,t_BH = bh(p,alpha=0.1,n_full=n_full)
+#    x_null,x_alt = x[p>0.75],x[p<t_BH]  
+#    n_val = x_val.shape[0]
+#    ## calculate the ratio
+#    cts_null = np.zeros([n_val],dtype=int)
+#    cts_alt  = np.zeros([n_val],dtype=int)
+#    for i,val in enumerate(x_val):
+#        cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
+#    p_null  = (cts_null+1)/np.sum(cts_null+1)
+#    p_alt   = (cts_alt+1)/np.sum(cts_alt+1)      
+#    p_ratio = p_alt/p_null 
+#        
+#    ## resort according to the ratio
+#    idx_sort    = p_ratio.argsort()
+#    x_new       = np.copy(x)
+#    x_order_new = []
+#    for i in range(n_val):
+#        x_new[x==x_val[idx_sort[i]]] = x_val[i]   
+#        x_order_new.append(idx_sort[i])
+#    return x_new,x_order_new,p_null
+
+#def reorder_discrete_feature(x,p,n_full=None):
+#    ## separate the null and the alt proportion
+#    x_val = np.unique(x)
+#    _,t_BH = bh(p,alpha=0.1,n_full=n_full)
+#    x_null,x_alt = x[p>0.75],x[p<t_BH]  
+#    #x_val = np.unique(x)
+#    ## calculate the ratio
+#    cts_null = np.zeros([x_val.shape[0]],dtype=int)
+#    cts_alt  = np.zeros([x_val.shape[0]],dtype=int)
+#    for i,val in enumerate(x_val):
+#        cts_null[i],cts_alt[i] = (x_null==val).sum(),(x_alt==val).sum()
+#    p_null  = (cts_null+1)/np.sum(cts_null+1)
+#    p_alt   = (cts_alt+1)/np.sum(cts_alt+1)      
+#    p_ratio = p_alt/p_null 
+#        
+#    ## resort according to the ratio
+#    idx_sort    = p_ratio.argsort()
+#    x_new       = np.copy(x)
+#    x_order_new = []
+#    for i in range(x_val.shape[0]):
+#        x_new[x==x_val[idx_sort[i]]] = x_val[i]   
+#        x_order_new.append(idx_sort[i])
+#    return x_new,x_order_new
 
 """ 
     feature_explore: provide a visualization of pi1/pi0 for each dimension, to visualize the amount of information carried by each dimension
@@ -128,7 +215,9 @@ def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_
             n_bin = bins.shape[0]-1
             x_grid = (bins+bin_width/2)[0:-1]
             p_null,_ = np.histogram(x_null,bins=bins) 
-            p_alt,_= np.histogram(x_alt,bins=bins)         
+            p_alt,_= np.histogram(x_alt,bins=bins)   
+            p_null = p_null+1
+            p_alt = p_alt+1
             p_null = p_null/np.sum(p_null)*n_bin
             p_alt = p_alt/np.sum(p_alt)*n_bin
             kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
@@ -149,7 +238,7 @@ def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_
             n_bin = unique_val.shape[0]           
             p_null = (p_null+1)/np.sum(p_null+1)*n_bin
             p_alt = (p_alt+1)/np.sum(p_alt+1)*n_bin            
-            p_ratio = (p_alt+1e-2)/(p_null+1e-2)  
+            p_ratio = p_alt/p_null  
             x_grid = (np.arange(unique_val.shape[0])+1)/(unique_val.shape[0]+1)
             x_min,x_max,bin_width = 0,1,1/(unique_val.shape[0]+1)
             
@@ -208,10 +297,17 @@ def feature_explore(p,x_,alpha=0.1,n_full=None,vis_dim=None,cate_name={},output_
     
     ## some transformation
     meta_info = []
+            
     for i in range(d):
-        x[:,i],temp_meta = cal_meta_info(x[:,i],p)
-        meta_info.append(temp_meta)
-        
+        feature_type = get_feature_type(x[:,i])
+        if feature_type == 'discrete':
+            x_val = np.sort(np.unique(x[:,i]))
+            x_order = get_order_discrete(x[:,i],p,x_val,n_full=n_full)
+            x[:,i] = reorder_discrete(x[:,i],x_val,x_order)
+            meta_info.append([feature_type,x_order])
+        else:
+            meta_info.append([feature_type,None])
+            
     if log_transform:
         for i in range(d):
             if meta_info[i][0]=='continuous':
@@ -250,6 +346,57 @@ def pfdr_test(data):
     fname = output_folder+'/record_fold_%d.txt'%fold_number
     f_write = open(fname,'w+')
     f_write.write('### record for fold_%d\n'%fold_number)
+    f_write.write('# K=%d, alpha=%0.2f, n_full=%d, n_itr=%d, random_state=%d\n'%(K,alpha,n_full,n_itr,random_state))
+    
+    ## preprocess the data 
+    if len(x1.shape) == 1: 
+        x1 = x1.reshape([-1,1])
+        x2 = x2.reshape([-1,1])
+    n1,d = x1.shape
+    n2,d = x2.shape
+    n = n1+n2
+    
+    for i in range(d):
+        temp_x = np.concatenate([x1[:,i],x2[:,i]])
+        feature_type = get_feature_type(temp_x)
+        if feature_type == 'discrete':
+            x_val = np.sort(np.unique(temp_x))           
+            x_order = get_order_discrete(x1[:,i],p1,x_val,n_full=n_full)
+            x1[:,i] = reorder_discrete(x1[:,i],x_val,x_order)
+            x2[:,i] = reorder_discrete(x2[:,i],x_val,x_order)           
+            f_write.write('# dim %d, x_order=%s\n'%(i,x_order))
+    
+    x = np.zeros([n,d])
+    rand_idx = np.random.permutation(n1+n2)    
+    x[rand_idx[0:n1],:] = x1
+    x[rand_idx[n1:],:] = x2  
+    x = feature_preprocess(x,qt_norm=True)
+    x1 = x[rand_idx[0:n1],:]
+    x2 = x[rand_idx[n1:],:]
+    
+    #x1 = feature_preprocess(x1,qt_norm=True)
+    #x2 = feature_preprocess(x2,qt_norm=True)
+    
+    #plt.figure(figsize=[18,5])
+    #plt.suptitle('after feature_preprocess')
+    #plot_x(x,vis_dim=None) 
+    #plt.tight_layout()
+    #plt.savefig(output_folder+'/x_%d.png'%fold_number)
+    #plt.show()
+    #
+    #plt.figure(figsize=[18,5])
+    #plt.suptitle('after feature_preprocess')
+    #plot_x(x1,vis_dim=None) 
+    #plt.tight_layout()
+    #plt.savefig(output_folder+'/x1_%d.png'%fold_number)
+    #plt.show()
+    #
+    #plt.figure(figsize=[18,5])
+    #plt.suptitle('after feature_preprocess')
+    #plot_x(x2,vis_dim=None) 
+    #plt.tight_layout()
+    #plt.savefig(output_folder+'/x2_%d.png'%fold_number)
+    #plt.show()   
         
     print('PrimFDR start')
     _,_,theta = PrimFDR(p1,x1,K=K,alpha=alpha,n_full=n_full,n_itr=n_itr,verbose=True,\
@@ -273,12 +420,11 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
     if len(x.shape) == 1: 
         x = x.reshape([-1,1])
     n_sample,d = x.shape
-    #x = feature_preprocess(x,p,qt_norm=qt_norm)
     
     ## random split the fold
     n_sub = int(n_sample/2)
     rand_idx = np.random.permutation(n_sample)
-    n_full = int(n_full/2)
+    n_full_sub = int(n_full/2)
     
     fold_idx = np.zeros([n_sample],dtype=int)
     fold_idx[rand_idx[0:n_sub]] = 0
@@ -292,7 +438,7 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
             logger.info('#time start: 0.0s')
 
     ## construct the data
-    args = [K,alpha,n_full,n_itr,output_folder,None,random_state]
+    args = [K,alpha,n_full_sub,n_itr,output_folder,None,random_state]
     data = {}
     for i in range(2): 
         data[i] = [p[fold_idx==i],x[fold_idx==i]]
@@ -322,6 +468,15 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
         theta.append(res[i][2])
     
     if verbose:
+        for i in range(d):
+            feature_type = get_feature_type(x[:,i])
+            if feature_type == 'discrete':
+                x_val = np.sort(np.unique(x[:,i]))
+                x_order = get_order_discrete(x[:,i],p,x_val,n_full=n_full)
+                x[:,i] = reorder_discrete(x[:,i],x_val,x_order)
+            
+        x = feature_preprocess(x,qt_norm=qt_norm)
+        
         color_list = ['navy','orange']
 
         print('# total rejection: %d'%np.array(n_rej).sum(), n_rej)
@@ -357,14 +512,23 @@ def PrimFDR_cv(p,x,K=3,alpha=0.1,n_full=None,n_itr=1000,qt_norm=True,h=None,\
     return n_rej,t,theta   
 
 def PrimFDR(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,qt_norm=True,h=None,verbose=False,debug='',\
-            output_folder=None,logger=None,fold_number=0,random_state=0,f_write=None):   
+            output_folder=None,logger=None,fold_number=0,random_state=0,f_write=None,if_preprocess=False):   
      
     ## feature preprocessing 
     torch.manual_seed(random_state)
     if len(x.shape)==1:
         x = x.reshape([-1,1])
     d = x.shape[1]
-    #x = feature_preprocess(x,p,qt_norm=qt_norm)
+    
+    if if_preprocess:
+        # reorder the discrete feature
+        for i in range(d):
+            feature_type = get_feature_type(x[:,i])
+            if feature_type == 'discrete':
+                x_val = np.sort(np.unique(x[:,i]))
+                x_order = get_order_discrete(x[:,i],p,x_val,n_full=n_full)
+                x[:,i] = reorder_discrete(x[:,i],x_val,x_order)            
+        x = feature_preprocess(x,qt_norm=qt_norm)
     
     if f_write is not None:
         f_write.write('# n_sample=%d\n'%(x.shape[0]))
@@ -373,7 +537,7 @@ def PrimFDR(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,qt_norm=True,h=None,verbose
         f_write.write('\n')
     
     # rough threshold calculation using PrimFDR_init 
-    w_init,a_init,mu_init,sigma_init = PrimFDR_init(p,x,K,alpha=alpha,n_full=n_full,verbose=verbose,\
+    a_init,mu_init,sigma_init,w_init = PrimFDR_init(p,x,K,alpha=alpha,n_full=n_full,verbose=verbose,\
                                                     output_folder=output_folder,logger=logger,\
                                                     random_state=random_state,fold_number=fold_number,\
                                                     f_write=f_write) 
@@ -605,7 +769,6 @@ def PrimFDR(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,qt_norm=True,h=None,verbose
 """
 def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,output_folder=None,\
                  logger=None,random_state=0,fold_number=0,f_write=None):
-    #x = feature_preprocess(x,p)
     np.random.seed(random_state)
     if verbose: 
         print('## PrimFDR_init starts')   
@@ -636,10 +799,10 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,outp
     if f_write is not None:
         f_write.write('## Learning null distribution\n')    
         
-    w_null,a_null,mu_null,sigma_null = mixture_fit(x_null,K,n_itr=n_itr,verbose=verbose,\
-                                                   logger=logger,output_folder=output_folder,\
-                                                   suffix='_null',random_state=random_state,\
-                                                   fold_number=fold_number,f_write=f_write)   
+    a_null,mu_null,sigma_null,w_null = mixture_fit(x_null,K,n_itr=n_itr,verbose=verbose,\
+                                                   random_state=random_state,f_write=f_write,\
+                                                   output_folder=output_folder,\
+                                                   suffix='_null',fold_number=fold_number)   
     
     x_w = 1/(f_all(x_alt,a_null,mu_null,sigma_null,w_null)+1e-5)
     x_w /= np.mean(x_w)
@@ -650,10 +813,10 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,outp
         logger.info('## Learning alternative distribution')
     if f_write is not None:
         f_write.write('## Learning alternative distribution\n')  
-    w,a,mu,sigma = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose,\
-                               logger=logger,output_folder=output_folder,\
-                               suffix='_alt',random_state=random_state,\
-                               fold_number=fold_number,f_write=f_write)
+    a,mu,sigma,w = mixture_fit(x_alt,K,x_w=x_w,n_itr=n_itr,verbose=verbose,\
+                               random_state=random_state,f_write=f_write,\
+                               output_folder=output_folder,\
+                               suffix='_alt',fold_number=fold_number)    
     
     if verbose:        
         t = f_all(x,a,mu,sigma,w)
@@ -673,6 +836,7 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,outp
             plt.figure(figsize=[8,12])
         plot_t(t,p,x,h)
         if output_folder is not None: 
+            plt.tight_layout()
             plt.savefig(output_folder+'/threshold_after_PrimFDR_init_fold_%d.png'%fold_number)
         else:
             plt.show()
@@ -681,117 +845,109 @@ def PrimFDR_init(p,x,K,alpha=0.1,n_full=None,n_itr=100,h=None,verbose=False,outp
             logger.info('## PrimFDR_init finishes')
         if f_write is not None:
             f_write.write('## PrimFDR_init finished\n')
-    return w,a,mu,sigma    
+    return a,mu,sigma,w    
 
-""" 
-    mixture_fit: fit a GLM+Gaussian mixture using EM algorithm
-"""
-def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,output_folder=None,\
-                suffix=None,random_state=0,fold_number=0,f_write=None):   
+def mixture_fit(x,K=3,x_w=None,n_itr=100,verbose=False,random_state=0,f_write=None,\
+                output_folder=None,suffix=None,fold_number=0):   
+    """
+    Fit a slope+bump mixture using EM algorithm
+
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        Covaraites
+    K : int
+        Number of bump components
+    x_w : (n,) ndarray
+        Sample weights
+    n_itr : int
+        Maximum iteration
+    verbose : bool
+        Indicate if output the computation details
+    random_state : int
+        Random seed    
+    f_write : file handler (write mode)
+        Output file
+    output_folder : string
+        Output directory
+    suffix : string
+        Suffix for the output file
+    fold_number : int(0/1)
+        The number of folds
+    
+    Returns
+    -------    
+    a: (d,) ndarray
+    mu,sigma: (k,d) ndarray
+    w: (n,) ndarray
+        The estiamted mixture model parameter
+    """  
     np.random.seed(random_state)
     if len(x.shape)==1: 
         x = x.reshape([-1,1])
     n_samp,d = x.shape
     if x_w is None: 
-        x_w=np.ones([n_samp],dtype=float)
-        
-    ## initialization
-    GMM = GaussianMixture(n_components=K,covariance_type='diag').fit(x) # fixit: the weights x_w are gone?? 
-    w_old = np.zeros([K+1])
-    w = 0.5*np.ones([K+1])/K
-    w[0] = 0.5
+        x_w=np.ones([n_samp],dtype=float)        
+    # Initialization
+    GMM      = GaussianMixture(n_components=K,covariance_type='diag').fit(x)
+    w_old    = np.zeros([K+1])
+    w        = 0.5*np.ones([K+1])/K
+    w[0]     = 0.5
     a        = ML_slope(x,x_w)   
     mu,sigma = GMM.means_,GMM.covariances_**0.5
     w_samp   = np.zeros([K+1,n_samp],dtype=float)
     i        = 0
-    
+    # Print the initialization information
     if verbose:
         print('## initialization')
-        #print('# Slope: w=%0.4f, a=%0.4f'%(w[0],a))
-        #for k in range(K):
-        #    print('# Bump %d: w=%0.4f'%(k,w[k+1]))
-        #    print('         mu=',mu[k]) 
-        #    print('      sigma=',sigma[k]) 
-        #    print()
-        #print('\n')
-        
         if f_write is not None:
-            f_write.write('## mixture_fit: initialization\n')
+            f_write.write('## mixture_fit: initialization parameters\n')
             f_write.write('# Slope: w=%0.4f, a=%s\n'%(w[0],a))
             for k in range(K):
                 f_write.write('# Bump %d: w=%0.4f\n'%(k,w[k+1]))
                 f_write.write('         mu=%s\n'%(mu[k])) 
                 f_write.write('      sigma=%s\n'%(sigma[k])) 
             f_write.write('\n')
-            
-    while np.linalg.norm(w-w_old)>1e-3 and i<n_itr:       
-        ## E step       
+    # EM algorithm        
+    while np.linalg.norm(w-w_old,1)>5e-3 and i<n_itr:              
+        # E step       
         w_old = w
         w_samp[0,:] = w[0]*f_slope(x,a)
         for k in range(K):
             w_samp[k+1,:] = w[k+1]*f_bump(x,mu[k],sigma[k])
-        w_samp = w_samp/np.sum(w_samp,axis=0)*x_w
-             
-        ## M step
+        w_samp = w_samp/np.sum(w_samp,axis=0)*x_w             
+        # M step
         w = np.mean(w_samp,axis=1) 
         a = ML_slope(x,w_samp[0,:])
         for k in range(K):
             if w[k+1]>1e-4: mu[k],sigma[k]=ML_bump(x,w_samp[k+1,:])               
         sigma = sigma.clip(min=1e-4)
-        w[w<1e-4] = 0
-        i += 1
-
+        w[w<1e-3] = 0
+        w /= w.sum()
+        i += 1        
+    # Convergence warning       
     if i >= n_itr and verbose: 
-        print('!!! the model does not converge')
-        
+        print('Warning: the model does not converge, w_dif=%0.4f'%np.linalg.norm(w-w_old,1))        
         if f_write is not None:
-            f_write.write('!!! the model does not converge \n')
-    
-    if verbose: 
-        print('## mixture_fit: learned parameters')
-        #print('# Slope: w=%0.4f, a=%0.4f'%(w[0],a))
-        #for k in range(K):
-        #    print('# Bump %d: w=%0.4f'%(k,w[k+1]))
-        #    print('         mu=',mu[k]) 
-        #    print('      sigma=',sigma[k]) 
-            
-        if f_write is not None:
-            f_write.write('## mixture_fit learned parameters\n')
-            f_write.write('# Slope: w=%0.4f, a=%s\n'%(w[0],a))
-            for k in range(K):
-                f_write.write('# Bump %d: w=%0.4f\n'%(k,w[k+1]))
-                f_write.write('         mu=%s\n'%(mu[k])) 
-                f_write.write('      sigma=%s\n'%(sigma[k])) 
-            f_write.write('\n')
-            
-    #if d==1 and verbose:        
-    #    plt.figure(figsize=[8,5])
-    #    plt.subplot(121)
-    #    temp_hist,_,_=plt.hist(x,bins=50,weights=1/n_samp*50*np.ones([n_samp]))
-    #    temp = np.linspace(0,1,101)
-    #    x_grid = temp.reshape([-1,1])
-    #    plt.plot(temp,f_all(x_grid,a,mu,sigma,w))
-    #    plt.ylim([0,1.5*temp_hist.max()])
-    #    plt.title('unweighted')
-    #    plt.subplot(122)
-    #    temp_hist,_,_=plt.hist(x,bins=50,weights=x_w/n_samp*50)
-    #    temp = np.linspace(0,1,101)
-    #    plt.plot(temp,f_all(x_grid,a,mu,sigma,w))
-    #    plt.ylim([-1e-3,1.5*temp_hist.max()])
-    #    plt.title('weighted')
-    #    plt.show()   
-        
+            f_write.write('Warning: the model does not converge, w_dif=%0.4f\n'%np.linalg.norm(w-w_old,1))
+    # Output 
+    if verbose and f_write is not None:
+        f_write.write('## mixture_fit: learned parameters\n')
+        f_write.write('# Slope: w=%0.4f, a=%s\n'%(w[0],a))
+        for k in range(K):
+            f_write.write('# Bump %d: w=%0.4f\n'%(k,w[k+1]))
+            f_write.write('         mu=%s\n'%(mu[k])) 
+            f_write.write('      sigma=%s\n'%(sigma[k])) 
+        f_write.write('\n')        
     if output_folder is not None:
         bins_ = np.linspace(0,1,101)
-        x_grid = bins_.reshape([-1,1])
-        
+        x_grid = bins_.reshape([-1,1])       
         if d==1:
             plt.figure(figsize=[8,5])
             plt.hist(x,bins=bins_,weights=x_w/np.sum(x_w)*100) 
             temp_p = f_all(x_grid,a,mu,sigma,w)      
             plt.plot(bins_,temp_p)
-            plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))
-        
+            plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))        
         else:
             plt.figure(figsize=[8,12])
             n_figure = min(d,4)
@@ -799,118 +955,142 @@ def mixture_fit(x,K=3,x_w=None,n_itr=1000,verbose=False,debug=False,logger=None,
                 plt.subplot(str(n_figure)+'1'+str(i_dim+1))
                 plt.hist(x[:,i_dim],bins=bins_,weights=x_w/np.sum(x_w)*100)  
                 temp_p = f_all(x_grid,a[[i_dim]],mu[:,[i_dim]],sigma[:,[i_dim]],w)  
-                #temp_p = np.zeros(bins_.shape[0])
-                #temp_p += w[0]*f_slope(x_grid,a[[i_dim]])
-                #for i in range(1,w.shape[0]):
-                #    temp_p += w[i]*f_bump(x_grid,mu[i-1,[i_dim]],sigma[i-1,[i_dim]])
                 plt.plot(bins_,temp_p)
                 plt.title('Dimension %d'%(i_dim+1))
             plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))
-        plt.close('all')
-    return w,a,mu,sigma
+        plt.close('all')    
+    return a,mu,sigma,w
 
 """
     sub-routines for mixture_fit
-    input:  x: x*d array (not (n,))
-            w: (n,) array
-            a: (d,) array
-            mu,sigma: (k,d) array
-            (The constraint on the ndarray is to save the time for type checking)
+    input:  x: (n,d) ndarray (not (n,))
+            w: (n,) ndarray
+            a: (d,) ndarray
+            mu,sigma: (k,d) ndarray
 """
-## ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
-def ML_slope(x,w=None,c=0.01):   
-    a = np.zeros(x.shape[1],dtype=float)
-    if w is None:
-        w = np.ones(x.shape[0])   
+def ML_slope(x,v=None,c=0.005):  
+    """
+    ML fit of the slope a/(e^a-1) e^(ax), defined over [0,1]
+
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        covaraites
+    v : (n,) ndarray 
+        weight for each sample
+    c : float
+        regularization factor 
+
+    Returns
+    -------
+    (d,) ndarray
+        the estiamted slope parameter
+    """    
+    n,d = x.shape
+    a = np.zeros(d,dtype=float)
+    if v is None:
+        t = np.mean(x,axis=0) 
     else:
-        w = w+1e-8
-    _,d = x.shape
+        t = np.sum((x.T*v).T,axis=0)/np.sum(v) # weighted sum along each dimension
     
-    t = np.sum((x.T*w).T,axis=0)/np.sum(w) # sufficient statistic: weighted sum along each dimension
-    a_u=100*np.ones([d],dtype=float)
-    a_l=-100*np.ones([d],dtype=float)
-    ## binary search 
+    a_u=10*np.ones([d],dtype=float)
+    a_l=-10*np.ones([d],dtype=float)
+    # binary search 
     while np.linalg.norm(a_u-a_l)>0.01:      
         a_m  = (a_u+a_l)/2
         a_m += 1e-2*(a_m==0)
-        temp = (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m +c*a_m)
+        temp = (np.exp(a_m)/(np.exp(a_m)-1) - 1/a_m + 2*c*a_m)
         a_l[temp<t] = a_m[temp<t]
         a_u[temp>=t] = a_m[temp>=t]
     return (a_u+a_l)/2
-
-## slope density function
-def f_slope(x,a):
     
-    ## Probability (dimension-wise probability)    
-    f_x = np.exp(x*a)
-    ## Normalization factor
-    norm_factor = np.exp(a)-1  
-    temp_v = (norm_factor!=0)
-    norm_factor = np.prod(a[temp_v]/norm_factor[temp_v])
-    ##  Total probability  
-    f_x = np.prod(f_x,axis=1) * norm_factor
-    return f_x
+def f_slope(x,a):
+    """
+    density of the slope function
 
-# old code:
-    #f_x = np.ones([x.shape[0]],dtype=float)     
-    #for i in range(x.shape[1]):
-    #    if a[i]==0:
-    #        f_x *= np.exp(a[i]*x[:,i])
-    #    else:
-    #        f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
-            
-    #if type(a) is not np.ndarray:
-    #    a = np.array([a])
-    #if len(x.shape)==1: x = x.reshape([-1,1])
-#if len(x.shape)==1: # 1d case 
-    #    if a==0:
-    #        return f_x
-    #    else: 
-    #        return a/(np.exp(a)-1)*np.exp(a*x)
-    #else:        
-    #    for i in range(x.shape[1]):
-    #        if a[i]==0:
-    #            f_x *= np.exp(a[i]*x[:,i])
-    #        else:
-    #            f_x *= a[i]/(np.exp(a[i])-1)*np.exp(a[i]*x[:,i])
-    #    return f_x
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        coML estimatearaites
+    a : (d,) ndarray 
+        slope parameter (for each dimension)
+
+    Returns
+    -------
+    (n,) array
+        the slope density for each point
+    """
+    f_x = np.exp(x.dot(a)) # dimension-wise probability
+    norm_factor = np.prod(a[a!=0]/(np.exp(a[a!=0])-1))
+    f_x = f_x * norm_factor # actual probability     
+
+    return f_x
 
 ## ML fit of the Gaussian
 ## Very hard to vectorize. So just leave it here
-def ML_bump(x,w=None,logger=None,gradient_check=False):
-    def ML_bump_1d(x,w,logger=None,gradient_check=False):
-        def fit_f(param,x,w):                
+def ML_bump(x,v=None,logger=None):
+    """
+    ML fit of the bump function
+
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        coML estimatearaites
+    v : (n,) ndarray 
+        weight for each sample
+
+    Returns
+    -------
+    mu : (n,d) ndarray
+        bump mean parameter (for each dimension)
+    sigma : (n,d) ndarray 
+        bump std parameter (for each dimension)
+    """   
+    def ML_bump_1d(x,v,logger=None):
+        def fit_f(param,x,v):                
             mu,sigma = param
-            Z = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
+            inv_sigma = 1/sigma
+            Z = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)            
+            inv_Z = 1/Z
             phi_alpha = 1/np.sqrt(2*np.pi)*np.exp(-mu**2/2/sigma**2)
             phi_beta = 1/np.sqrt(2*np.pi)*np.exp(-(1-mu)**2/2/sigma**2)
 
-            ## average likelihood
-            t = np.sum((x-mu)**2*w) / np.sum(w)
-            l = -np.log(Z) - np.log(sigma) - t/2/sigma**2        
-            ## gradient    
-            d_c_mu = 1/sigma * (phi_alpha-phi_beta)
-            d_c_sig = 1/sigma * (-mu/sigma*phi_alpha - (1-mu)/sigma*phi_beta)
-            d_l_mu = -d_c_mu/Z + np.sum((x-mu)*w)/sigma**2/np.sum(w)
-            d_l_sig = -d_c_sig/Z - 1/sigma + t/sigma**3
+            # Average likelihood
+            if v is None:
+                t1 = np.mean(x-mu)
+                t2 = np.mean((x-mu)**2)
+            else:
+                t1 = np.sum((x-mu)*v) / np.sum(v)
+                t2 = np.sum((x-mu)**2*v) / np.sum(v)
+                
+            l = -np.log(Z) - np.log(sigma) - t2/2/sigma**2        
+            # Gradient    
+            d_c_mu = inv_sigma * (phi_alpha-phi_beta)
+            d_c_sig = inv_sigma * (-mu*inv_sigma*phi_alpha - (1-mu)*inv_sigma*phi_beta)
+            d_l_mu = -d_c_mu*inv_Z + t1*inv_sigma**2
+            d_l_sig = -d_c_sig*inv_Z - inv_sigma + t2*inv_sigma**3
             grad = np.array([d_l_mu,d_l_sig],dtype=float)  
             return l,grad
         
         ## gradient check
-        if gradient_check:
-            _,grad_ = fit_f([0.2,0.1],x,w)
-            num_dmu = (fit_f([0.2+1e-8,0.1],x,w)[0]-fit_f([0.2,0.1],x,w)[0]) / 1e-8
-            num_dsigma = (fit_f([0.2,0.1+1e-8],x,w)[0]-fit_f([0.2,0.1],x,w)[0]) / 1e-8          
-            logger.info('## Gradient check ##')
-            logger.info('#  param value: mu=%0.3f, sigma=%0.3f'%(0.2,0.1))
-            logger.info('#  Theoretical grad: dmu=%0.5f, dsigma=%0.5f'%(grad_[0],grad_[1]))
-            logger.info('#  Numerical grad: dmu=%0.5f, dsigma=%0.5f'%(num_dmu,num_dsigma))
+        #_,grad_ = fit_f([0.2,0.1],x,v)
+        #num_dmu = (fit_f([0.2+1e-8,0.1],x,v)[0]-fit_f([0.2,0.1],x,v)[0]) / 1e-8
+        #num_dsigma = (fit_f([0.2,0.1+1e-8],x,v)[0]-fit_f([0.2,0.1],x,v)[0]) / 1e-8          
+        #print('## Gradient check ##')
+        #print('#  param value: mu=%0.6f, sigma=%0.6f'%(0.2,0.1))
+        #print('#  Theoretical grad: dmu=%0.8f, dsigma=%0.8f'%(grad_[0],grad_[1]))
+        #print('#  Numerical grad: dmu=%0.8f, dsigma=%0.8f\n'%(num_dmu,num_dsigma))
             
-        ##  if the variance is small, no need to fit a truncated Gaussian
-        mu = np.sum(x*w)/np.sum(w)
-        sigma = np.sqrt(np.sum((x-mu)**2*w)/np.sum(w))
+        # If the variance is small and the mean is at center, 
+        # directly output the empirical mean and variance.
+        if v is None:
+            mu = np.mean(x)
+            sigma = np.std(x)
+        else:       
+            mu = np.sum(x*v)/np.sum(v)
+            sigma = np.sqrt(np.sum((x-mu)**2*v)/np.sum(v))
         
-        if sigma<0.1:
+        if sigma<0.075 and np.min([1-mu,mu])>0.15:
             return mu,sigma
         
         param = np.array([mu,sigma])    
@@ -920,103 +1100,88 @@ def ML_bump(x,w=None,logger=None,gradient_check=False):
         i_itr = 0
         l_old = -10
         
-        #rec_ = []
-        while i_itr<max_itr:
-            l,grad = fit_f(param,x,w)
-            if np.absolute(l-l_old)<0.01:
+        while i_itr<max_itr:            
+            l,grad = fit_f(param,x,v)
+            if np.absolute(l-l_old)<0.001:
                 break
             else:
                 l_old=l
             update = (grad*lr).clip(min=-max_step,max=max_step)
-            #rec_.append([i_itr,param,grad,update])
-            #print([i_itr,param,grad,update])
             param += update
-            i_itr +=1     
-            
-            if np.isnan(param).any():
-                
+            i_itr +=1                 
+            if np.isnan(param).any() or np.min([param[0],1-param[0],param[1]])<0:  
+                print('error',param)
                 return np.mean(x),np.std(x)
                 
         mu,sigma = param  
         if sigma>0.25:
             sigma=1
         return mu,sigma      
-    
-    if w is None: w = np.ones(x.shape[0])
-       
+  
     mu    = np.zeros(x.shape[1],dtype=float)
     sigma = np.zeros(x.shape[1],dtype=float)
     for i in range(x.shape[1]):
-        mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
+        mu[i],sigma[i] = ML_bump_1d(x[:,i],v,logger=logger)
     return mu,sigma
 
-#if len(x.shape)==1: x = x.reshape([-1,1])
-    #if len(x.shape)==1:
-    #    return ML_bump_1d(x,w,logger=logger,gradient_check=gradient_check)
-    #else:       
-    #    mu    = np.zeros(x.shape[1],dtype=float)
-    #    sigma = np.zeros(x.shape[1],dtype=float)
-    #    for i in range(x.shape[1]):
-    #        mu[i],sigma[i] = ML_bump_1d(x[:,i],w,logger=logger,gradient_check=gradient_check)
-    #    return mu,sigma
-    
-## old code for ML_bump_1d
-    #def ML_bump_1d(x,w=None):
-    #    if w is None:
-    #        w = np.ones(x.shape[0])
-    #        
-    #    mean_ = np.sum(x*w)/np.sum(w)
-    #    var_  = np.sum((x-mean_)**2*w)/np.sum(w)
-    #    #print('mean_=%0.3f, var_=%0.3f'%(mean_,var_))
-    #    
-    #    ## estimation            
-    #    mu    = np.sum(x*w)/np.sum(w)    
-    #    sigma = np.sqrt(var_)     
-    #    return mu,sigma
-
-## bump density function
 def f_bump(x,mu,sigma):
-    def f_bump_1d(x,mu,sigma): ## correct for the finite interval issue
-        if sigma<1e-6: return np.zeros(x.shape)
+    """
+    density of the bump function
+
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        coML estimatearaites
+    mu : (d,) ndarray 
+        bump mean parameter (for each dimension)
+     
+    sigma : (d,) ndarray 
+        bump std parameter (for each dimension)
+
+    Returns
+    -------
+    (n,) array
+        the bump density for each point
+    """    
+    def f_bump_1d(x,mu,sigma):
+        if sigma<1e-6: 
+            return np.zeros(x.shape[0],dtype=float)
+        inv_sigma=1/sigma
         pmf = sp.stats.norm.cdf(1,loc=mu,scale=sigma)-sp.stats.norm.cdf(0,loc=mu,scale=sigma)
-        return 1/sigma/np.sqrt(2*np.pi)*np.exp(-(x-mu)**2/2/sigma**2)/pmf
+        return inv_sigma/np.sqrt(2*np.pi)*np.exp(-inv_sigma**2*(x-mu)**2/2)/pmf
        
     f_x = np.ones([x.shape[0]],dtype=float)
     for i in range(x.shape[1]):
         f_x *=  f_bump_1d(x[:,i],mu[i],sigma[i])
     return f_x       
         
-# old code  
-    #if type(mu) is not np.ndarray:
-    #    mu = np.array([mu])   
-    #    sigma = np.array([sigma])
-    
-    #if len(x.shape)==1:
-    #    return f_bump_1d(x,mu,sigma)
-    #else:
-    #    f_x = np.ones([x.shape[0]],dtype=float)
-    #    for i in range(x.shape[1]):
-    #        f_x *=  f_bump_1d(x[:,i],mu[i],sigma[i])
-    #    return f_x       
-
-## the entire density function
 def f_all(x,a,mu,sigma,w):
+    """
+    density of the mixture model (slope+bump)
+
+    Parameters
+    ----------
+    x : (n,d) ndarray
+        coML estimatearaites
+    mu : (d,) ndarray 
+        bump mean parameter (for each dimension)
+     
+    sigma : (d,) ndarray 
+        bump std parameter (for each dimension)
+
+    Returns
+    -------
+    (n,) array
+        the bump density for each point
+    """
+    
     f = w[0]*f_slope(x,a)        
     for k in range(1,w.shape[0]):
         f += w[k]*f_bump(x,mu[k-1],sigma[k-1])           
     return f
 
-# old code
-    #if len(x.shape) == 1:
-    #    for k in range(1,w.shape[0]):
-    #        f += w[k]*f_bump(x,mu[k-1],sigma[k-1])
-    #else:
-    #    
-    #return f
-
-
 '''
-    baseline comparison methods
+    Baseline comparison methods
 '''
 def bh(p,alpha=0.1,n_full=None,verbose=False):
     if n_full is None: 

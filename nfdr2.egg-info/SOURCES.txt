@@ -1,0 +1,6 @@
+README.md
+nfdr2.egg-info/PKG-INFO
+nfdr2.egg-info/SOURCES.txt
+nfdr2.egg-info/dependency_links.txt
+nfdr2.egg-info/not-zip-safe
+nfdr2.egg-info/top_level.txt

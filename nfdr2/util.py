@@ -5,6 +5,44 @@ import matplotlib.pyplot as plt
 from scipy.stats import rankdata
 import logging
 
+""" 
+    basic functions
+"""
+def get_grid_1d(n_grid):    
+    """
+    return an equally spaced covariate covering the 1d space...
+
+    Parameters
+    ----------
+    n_grid: int
+        number of points 
+
+    Returns
+    -------
+    (n,1) ndarray
+    """
+    
+    x_grid = np.linspace(0,1,n_grid).reshape(-1,1)
+    return x_grid
+
+def get_grid_2d(n_grid):
+    """
+    return an equally spaced covariate covering the 2d space...
+
+    Parameters
+    ----------
+    n_grid: int
+        number of points 
+
+    Returns
+    -------
+    (n,2) ndarray
+    """
+    temp = np.linspace(0,1,n_grid)
+    g1,g2  = np.meshgrid(temp,temp)
+    x_grid = np.concatenate([g1.reshape(-1,1),g2.reshape(-1,1)],axis=1)
+    return x_grid
+
 """
     calculate the dimension-wise rank statistics
     # fix it: for discrete features, it may be nice to keep their values the same
@@ -129,6 +167,13 @@ def result_summary(pred,h,logger=None,f_write=None):
         f_write.write('\n')
     return
 
+def print_param(a,mu,sigma,w):
+    print('# w=%s'%w)
+    print('# a=%s'%a)
+    print('# mu=%s'%mu)
+    print('# sigma=%s'%sigma)
+    print('')
+
 """
     basic functions for visualization
 """ 
@@ -233,41 +278,41 @@ def inv_sigmoid(w):
     return np.log(w/(1-w))
       
     
-''' A simple profiler for logging '''
-import logging
-import time
-
-class Profiler(object):
-    def __init__(self, name, logger=None, level=logging.INFO, enable=True):
-        self.name = name
-        self.logger = logger
-        self.level = level
-        self.enable = enable
-
-    def step( self, name ):
-        """ Returns the duration and stepname since last step/start """
-        duration = self.summarize_step( start=self.step_start, step_name=name, level=self.level )
-        now = time.time()
-        self.step_start = now
-        return duration 
-
-    def __enter__( self ):
-        self.start = time.time()
-        self.step_start = time.time()
-        return self
- 
-    def __exit__( self, exception_type, exception_value, traceback ):
-        if self.enable:
-            self.summarize_step( self.start, step_name="complete" )
-        
-        
-
-    def summarize_step( self, start, step_name="", level=None ):
-        duration = time.time() - start
-        step_semicolon = ':' if step_name else ""
-        #if self.logger:
-        #    level = level or self.level
-            #self.logger.log( self.level, "{name}{step}: ".format( name=self.name, step=step_semicolon + " " + step_name, secs=1/duration) )
-        #else:
-        print("{name}{step}:  {duration:.5f} seconds".format( name=self.name, step=step_semicolon + " " + step_name, duration=duration))
-        return duration
+#''' A simple profiler for logging '''
+#import logging
+#import time
+#
+#class Profiler(object):
+#    def __init__(self, name, logger=None, level=logging.INFO, enable=True):
+#        self.name = name
+#        self.logger = logger
+#        self.level = level
+#        self.enable = enable
+#
+#    def step( self, name ):
+#        """ Returns the duration and stepname since last step/start """
+#        duration = self.summarize_step( start=self.step_start, step_name=name, level=self.level )
+#        now = time.time()
+#        self.step_start = now
+#        return duration 
+#
+#    def __enter__( self ):
+#        self.start = time.time()
+#        self.step_start = time.time()
+#        return self
+# 
+#    def __exit__( self, exception_type, exception_value, traceback ):
+#        if self.enable:
+#            self.summarize_step( self.start, step_name="complete" )
+#        
+#        
+#
+#    def summarize_step( self, start, step_name="", level=None ):
+#        duration = time.time() - start
+#        step_semicolon = ':' if step_name else ""
+#        #if self.logger:
+#        #    level = level or self.level
+#            #self.logger.log( self.level, "{name}{step}: ".format( name=self.name, step=step_semicolon + " " + step_name, secs=1/duration) )
+#        #else:
+#        print("{name}{step}:  {duration:.5f} seconds".format( name=self.name, step=step_semicolon + " " + step_name, duration=duration))
+#        return duration

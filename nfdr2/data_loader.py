@@ -55,32 +55,25 @@ def toy_data_1d(job_id=0,n_sample=10000,vis=0):
             plt.show() 
         return p,x,h
     
-## toy data to testing mixture_fit
-def load_toy_mixture(opt=0,logger=None):
-    def grid_2d():
-        grid = np.linspace(0,1,101)
-        x,y  = np.meshgrid(grid,grid)
-        x    = x.flatten()
-        y    = y.flatten()
-        n_g  = x.shape[0]
-        x    = np.concatenate([x.reshape((n_g,1)),y.reshape((n_g,1))],axis=1)
-        return x,n_g
-    
-    n_sample = 10000
+def load_x_mixture(opt=0,logger=None):
+    """ generate a mixture data (of x) to test mixture_fit """    
+    n_sample = 10000    
     if opt==0: # 2d slope, generated according to the slope model
-        a    = np.array([2,0],dtype=float)
+        a = np.array([2,0],dtype=float)
         if logger is None:
             print('slope parameter a = ',a) 
         else:
             logger.info('# a=(%0.2f,%0.2f)'%(a[0],a[1]))
-        x,ng = grid_2d()
-        p    = f_slope(x,a)
+        x_grid = get_grid_2d(101)
+        n_grid = x_grid.shape[0]
+        p    = f_slope(x_grid,a)
         p   /= p.sum()
-        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
-        sample = x[sample,:]
+        x = np.random.choice(np.arange(n_grid),size=n_sample,p=p)
+        x = x_grid[x,:]
+        param = a 
         
     elif opt==1: # 2d bump, generated according to the exact model   
-        mu = np.array([0.5,0.2],dtype=float)
+        mu = np.array([0.5,0.05],dtype=float)
         sigma = np.array([0.1,0.1],dtype=float)
         if logger is None:
             print('# mu=(%0.2f,%0.2f)'%(mu[0],mu[1]))
@@ -88,59 +81,53 @@ def load_toy_mixture(opt=0,logger=None):
         else:
             logger.info('# mu=(%0.2f,%0.2f)'%(mu[0],mu[1]))
             logger.info('# sigma=(%0.2f,%0.2f)'%(sigma[0],sigma[1]))
-        x,ng = grid_2d()
-        p    = f_bump(x,mu,sigma)
+        x_grid = get_grid_2d(101)
+        n_grid = x_grid.shape[0]
+        p    = f_bump(x_grid,mu,sigma)
         p   /= p.sum()
-        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
-        sample = x[sample,:]
+        x = np.random.choice(np.arange(n_grid),size=n_sample,p=p)
+        x = x_grid[x,:]
+        param = (mu,sigma)
 
     elif opt==2: # 2d slope+bump  
-        w = [0.4,0.3,0.3]
+        w = np.array([0.4,0.3,0.3],dtype=float)
         a = np.array([2,0],dtype=float)
-        mu1 = np.array([0.2,0.2],dtype=float)
-        sigma1 = np.array([0.1,0.5],dtype=float)
-        mu2 = np.array([0.7,0.7],dtype=float)
-        sigma2 = np.array([0.1,0.1],dtype=float)
+        mu = np.array([[0.2,0.2],[0.7,0.7]],dtype=float)
+        sigma = np.array([[0.1,0.2],[0.1,0.1]],dtype=float)
         
-        x,ng = grid_2d()
-        p    = w[0]*f_slope(x,a) + w[1]*f_bump(x,mu1,sigma1) + w[2]*f_bump(x,mu2,sigma2)
+        x_grid = get_grid_2d(101)
+        n_grid = x_grid.shape[0]
+        p = f_all(x_grid,a,mu,sigma,w)
         p   /= p.sum()
-        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
-        sample = x[sample,:]
-        
-        if logger is not None:   
-            logger.info('## Simulated data info: 2d_slope_bump, n_sample=%d ##'%n_sample)
-            logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
-            logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
-            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)\n'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
+        x = np.random.choice(np.arange(n_grid),size=n_sample,p=p)
+        x = x_grid[x,:]
+        param = (a,mu,sigma,w)
             
     elif opt==3: # 10d slope+bump in the first 2d
-        w = [0.4,0.3,0.3]
+        w = np.array([0.4,0.3,0.3],dtype=float)
         a = np.array([2,0],dtype=float)
-        mu1 = np.array([0.2,0.2],dtype=float)
-        sigma1 = np.array([0.1,0.5],dtype=float)
-        mu2 = np.array([0.7,0.7],dtype=float)
-        sigma2 = np.array([0.1,0.1],dtype=float)
+        mu = np.array([[0.2,0.2],[0.7,0.7]],dtype=float)
+        sigma = np.array([[0.1,0.2],[0.1,0.1]],dtype=float)
         
-        x,ng = grid_2d()
-        p    = w[0]*f_slope(x,a) + w[1]*f_bump(x,mu1,sigma1) + w[2]*f_bump(x,mu2,sigma2)
+        x_grid = get_grid_2d(101)
+        n_grid = x_grid.shape[0]
+        p = f_all(x_grid,a,mu,sigma,w)
         p   /= p.sum()
-        sample = np.random.choice(np.arange(ng),size=n_sample,p=p)
-        sample = x[sample,:]
+        x = np.random.choice(np.arange(n_grid),size=n_sample,p=p)
+        x = x_grid[x,:]
         
-        sample_noise = np.random.uniform(high=1,low=0,size = (n_sample,7))
-        sample = np.concatenate([sample,sample_noise],1)
-        
-        if logger is not None:   
-            logger.info('## Simulated data info: 10d_slope_bump, n_sample=%d ##'%n_sample)
-            logger.info('# Slope w=%0.1f: a=(%0.1f,%0.1f)'%(w[0],a[0],a[1]))
-            logger.info('# Bump1 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[1],mu1[0],mu1[1],sigma1[0],sigma1[1]))
-            logger.info('# Bump2 w=%0.1f: mu=(%0.1f,%0.1f), sigma=(%0.1f,%0.1f)'%(w[2],mu2[0],mu2[1],sigma2[0],sigma2[1]))
-            logger.info('# Other dims are uniform\n')
+        a_ = np.zeros(10)
+        a_[0:2] = a
+        mu_ = np.zeros([2,10],dtype=float)+0.5
+        mu_[:,0:2] = mu
+        sigma_ = np.ones([2,10],dtype=float)
+        sigma_[:,0:2] = sigma
+        param = (a_,mu_,sigma_,w)        
+        x_noise = np.random.uniform(high=1,low=0,size = (n_sample,8))
+        x = np.concatenate([x,x_noise],1)
     else:
-        pass
-    
-    return sample,x,p
+        pass    
+    return x,param
     
 ## neuralFDR simulated examples    
 def neuralfdr_generate_data_1D(job=0, n_samples=10000,data_vis=0, num_case=4):
