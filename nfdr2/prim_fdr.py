@@ -1110,7 +1110,6 @@ def ML_bump(x,v=None,logger=None):
             param += update
             i_itr +=1                 
             if np.isnan(param).any() or np.min([param[0],1-param[0],param[1]])<0:  
-                print('error',param)
                 return np.mean(x),np.std(x)
                 
         mu,sigma = param  

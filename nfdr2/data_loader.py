@@ -449,7 +449,7 @@ def load_GTEx_full(verbose=False):
     file_name='/data/martin/NeuralFDR/NeuralFDR_data/gtex_new_filtered.csv'
     X = np.loadtxt(file_name,skiprows=1,delimiter=',')
     x,p,n_full = X[:,0:4],X[:,4],10623893
-    x[:,0],x[:,1] = np.log(x[:,0]+1), np.log(x[:,1]+1)
+    #x[:,0],x[:,1] = np.log(x[:,0]+1), np.log(x[:,1]+1)
     if verbose:
         print('## Load GTEx full data ##')
         print('# all hypothesis: %d'%n_full)
