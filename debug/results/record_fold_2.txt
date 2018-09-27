@@ -1,0 +1,187 @@
+### record for fold_2
+# K=2, alpha=0.10, n_full=10000, n_itr=50, random_state=0
+# n_sample=10000
+# p<0.000001: 19
+# p<0.000010: 49
+# p<0.000100: 110
+# p<0.000500: 178
+
+## method_init starts
+# t_BH=0.003035, n_null=2220, n_alt=304
+## Learning null distribution
+## mixture_fit: initialization parameters
+# Slope: w=0.5000, a=[-0.1391 -0.056 ]
+# Bump 0: w=0.2500
+         mu=[0.2471 0.521 ]
+      sigma=[0.1583 0.2902]
+# Bump 1: w=0.2500
+         mu=[0.7252 0.4692]
+      sigma=[0.1662 0.2839]
+
+## mixture_fit: learned parameters
+# Slope: w=0.9006, a=[-0.1733 -0.056 ]
+# Bump 0: w=0.0481
+         mu=[0.3905 0.5115]
+      sigma=[0.1934 1.    ]
+# Bump 1: w=0.0514
+         mu=[0.6343 0.4767]
+      sigma=[0.182 1.   ]
+
+## Learning alternative distribution
+## mixture_fit: initialization parameters
+# Slope: w=0.5000, a=[0.2173 0.3393]
+# Bump 0: w=0.2500
+         mu=[0.7427 0.6321]
+      sigma=[0.1534 0.2505]
+# Bump 1: w=0.2500
+         mu=[0.2248 0.397 ]
+      sigma=[0.1282 0.2426]
+
+## mixture_fit: learned parameters
+# Slope: w=0.4661, a=[0.5539 0.3783]
+# Bump 0: w=0.2767
+         mu=[0.765 0.733]
+      sigma=[0.1375 0.1309]
+# Bump 1: w=0.2573
+         mu=[0.2046 0.3037]
+      sigma=[0.1099 0.1757]
+
+
+## Test result with method_init
+# Num of discovery: 355
+
+## method_init finished
+
+## rescale_mirror: before optimization
+# quantile of t (1,25,75,99): [0.0818 0.1008 0.2642 0.5953]
+# gamma_pre=0.2011
+# gamma_l=0.0000, gamma_u=0.0204, D_hat=290, FD_hat=24, alpha_hat=0.0828
+# gamma_l=0.0102, gamma_u=0.0204, D_hat=332, FD_hat=29, alpha_hat=0.0873
+# final output: gamma=0.0036
+
+## choosing lambda0
+## lambda0=280.0, D=355, FD_hat=36, alpha_hat=0.101
+# lambda0=420.0, D_apr=329.5 (r err=0.072), FD_hat_apr=41.452 (r err=0.151)
+# lambda0=560.0, D_apr=334.1 (r err=0.059), FD_hat_apr=39.637 (r err=0.101)
+# lambda0=700.0, D_apr=337.9 (r err=0.048), FD_hat_apr=38.756 (r err=0.077)
+# lambda0=840.0, D_apr=341.1 (r err=0.039), FD_hat_apr=38.274 (r err=0.063)
+# lambda0=980.0, D_apr=343.5 (r err=0.032), FD_hat_apr=37.978 (r err=0.055)
+# lambda0=1120.0, D_apr=345.5 (r err=0.027), FD_hat_apr=37.773 (r err=0.049)
+# lambda0=1260.0, D_apr=347.1 (r err=0.022), FD_hat_apr=37.615 (r err=0.045)
+# lambda0=1400.0, D_apr=348.4 (r err=0.019), FD_hat_apr=37.482 (r err=0.041)
+# lambda0=1540.0, D_apr=349.4 (r err=0.016), FD_hat_apr=37.365 (r err=0.038)
+# lambda0=1680.0, D_apr=350.2 (r err=0.014), FD_hat_apr=37.258 (r err=0.035)
+# lambda0=1820.0, D_apr=350.8 (r err=0.012), FD_hat_apr=37.158 (r err=0.032)
+# lambda0=1960.0, D_apr=351.4 (r err=0.010), FD_hat_apr=37.066 (r err=0.030)
+# lambda0=2100.0, D_apr=351.8 (r err=0.009), FD_hat_apr=36.980 (r err=0.027)
+# lambda0=2240.0, D_apr=352.1 (r err=0.008), FD_hat_apr=36.900 (r err=0.025)
+# lambda0=2380.0, D_apr=352.4 (r err=0.007), FD_hat_apr=36.826 (r err=0.023)
+# lambda0=2520.0, D_apr=352.6 (r err=0.007), FD_hat_apr=36.757 (r err=0.021)
+# lambda0=2660.0, D_apr=352.8 (r err=0.006), FD_hat_apr=36.693 (r err=0.019)
+
+## optimization paramter:
+# n_itr=50, n_samp=10000, lambda0=2660.0000, lambda1=100.0000
+
+## method_single_fold: initialization
+# Slope: a=[0.5539 0.3783]
+         b=-6.8777
+# Bump 0: w=-4.6692
+         mu=[0.765 0.733]
+      sigma=[0.7792 1.286 ]
+# Bump 1: w=-4.8027
+         mu=[0.2046 0.3037]
+      sigma=[1.2208 0.714 ]
+
+
+## iteration 0: 
+# n_rej=355, n_rej_apr=352.8, FD_hat=36, FD_hat_apr=36.7
+# loss1=-0.0353, loss2=0.0141, FDP=0.0000, FDP_hat_apr=0.1040
+# Slope: a=[0.5339 0.3583]
+         b=-6.8977
+# Bump 0: w=-4.6892
+         mu=[0.745 0.753]
+      sigma=[0.7992 1.306 ]
+# Bump 1: w=-4.8227
+         mu=[0.2246 0.2837]
+      sigma=[1.2408 0.734 ]
+
+## iteration 10: 
+# n_rej=334, n_rej_apr=331.7, FD_hat=27, FD_hat_apr=29.1
+# loss1=-0.0332, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0877
+# Slope: a=[0.4852 0.3165]
+         b=-6.9448
+# Bump 0: w=-4.7334
+         mu=[0.6773 0.8086]
+      sigma=[0.8406 1.3379]
+# Bump 1: w=-4.8674
+         mu=[0.2892 0.2231]
+      sigma=[1.2648 0.7964]
+
+## iteration 20: 
+# n_rej=341, n_rej_apr=337.4, FD_hat=29, FD_hat_apr=31.2
+# loss1=-0.0337, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0925
+# Slope: a=[0.5011 0.3452]
+         b=-6.9261
+# Bump 0: w=-4.7126
+         mu=[0.6681 0.8096]
+      sigma=[0.8058 1.2994]
+# Bump 1: w=-4.8399
+         mu=[0.2578 0.2248]
+      sigma=[1.1967 0.8076]
+
+## iteration 30: 
+# n_rej=360, n_rej_apr=357.1, FD_hat=32, FD_hat_apr=33.3
+# loss1=-0.0357, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0932
+# Slope: a=[0.5413 0.4012]
+         b=-6.8841
+# Bump 0: w=-4.6654
+         mu=[0.6765 0.7862]
+      sigma=[0.739  1.2267]
+# Bump 1: w=-4.7914
+         mu=[0.2723 0.2513]
+      sigma=[1.1105 0.8032]
+
+## iteration 40: 
+# n_rej=385, n_rej_apr=382.3, FD_hat=35, FD_hat_apr=36.1
+# loss1=-0.0382, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0944
+# Slope: a=[0.5943 0.4735]
+         b=-6.8282
+# Bump 0: w=-4.5990
+         mu=[0.6815 0.7492]
+      sigma=[0.6554 1.118 ]
+# Bump 1: w=-4.7301
+         mu=[0.2955 0.2855]
+      sigma=[1.0036 0.79  ]
+
+## rescale_mirror: after method_single_fold
+# quantile of t (1,25,75,99): [0.0015 0.0021 0.0057 0.012 ]
+# gamma_pre=1.0000
+# gamma_l=0.9442, gamma_u=1.8883, D_hat=429, FD_hat=58, alpha_hat=0.1352
+# gamma_l=0.9442, gamma_u=1.4163, D_hat=406, FD_hat=46, alpha_hat=0.1133
+# gamma_l=0.9442, gamma_u=1.1802, D_hat=394, FD_hat=38, alpha_hat=0.0964
+# gamma_l=1.0622, gamma_u=1.1802, D_hat=401, FD_hat=42, alpha_hat=0.1047
+# gamma_l=1.0622, gamma_u=1.1212, D_hat=399, FD_hat=39, alpha_hat=0.0977
+# gamma_l=1.0917, gamma_u=1.1212, D_hat=400, FD_hat=41, alpha_hat=0.1025
+# gamma_l=1.0917, gamma_u=1.1065, D_hat=400, FD_hat=39, alpha_hat=0.0975
+# final output: gamma=1.1028
+
+## Test result with method_single_fold
+# Num of discovery: 400
+
+
+## rescale_mirror: cv
+# quantile of t (1,25,75,99): [0.0015 0.0021 0.0058 0.0121]
+# gamma_pre=1.0000
+# gamma_l=0.9362, gamma_u=1.8724, D_hat=429, FD_hat=48, alpha_hat=0.1119
+# gamma_l=0.9362, gamma_u=1.4043, D_hat=403, FD_hat=38, alpha_hat=0.0943
+# gamma_l=1.1702, gamma_u=1.4043, D_hat=412, FD_hat=40, alpha_hat=0.0971
+# gamma_l=1.2872, gamma_u=1.4043, D_hat=422, FD_hat=44, alpha_hat=0.1043
+# gamma_l=1.2872, gamma_u=1.3458, D_hat=416, FD_hat=42, alpha_hat=0.1010
+# gamma_l=1.2872, gamma_u=1.3165, D_hat=413, FD_hat=41, alpha_hat=0.0993
+# gamma_l=1.3019, gamma_u=1.3165, D_hat=415, FD_hat=42, alpha_hat=0.1012
+# gamma_l=1.3019, gamma_u=1.3092, D_hat=414, FD_hat=41, alpha_hat=0.0990
+# final output: gamma=1.3074
+
+## Test result with method_cv fold_2
+# Num of discovery: 415
+

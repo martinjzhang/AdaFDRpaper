@@ -2,14 +2,8 @@ import numpy as np
 import scipy as sp
 
 from nfdr2.util import *
-import nfdr2.prim_fdr as pf
+import nfdr2.method as md
 import nfdr2.data_loader as dl
-
-
-
-def test_passing():
-    assert(1,2,3) == (1,2,3)
-    
 
 def test_f_slope():
     ''' a 1d example '''
@@ -60,7 +54,7 @@ def test_ML_slope():
     c = 0
     
     ''' without weights '''
-    a_hat = pf.ML_slope(x,c=c)    
+    a_hat = md.ML_slope(x,c=c)    
     error = np.linalg.norm(a_hat-a_true,1)
     print('without weights: a_true = %s'%a_true)
     print('without weights: a_hat = %s'%a_hat)
@@ -77,7 +71,7 @@ def test_ML_slope():
     
     ''' with weights '''
     v = np.random.randn(x.shape[0]).clip(min=0)  
-    a_hat = pf.ML_slope(x,v=v,c=c)
+    a_hat = md.ML_slope(x,v=v,c=c)
     error = np.linalg.norm(a_hat-a_true,1)
     print('with weights: a_true = %s'%a_true)
     print('with weights: a_hat = %s'%a_hat)
@@ -146,7 +140,7 @@ def test_ML_slope():
     mu_true,sigma_true = param
     
     ''' without weights '''
-    mu_hat,sigma_hat = pf.ML_bump(x)
+    mu_hat,sigma_hat = md.ML_bump(x)
     error = np.linalg.norm(mu_true-mu_hat,1) + np.linalg.norm(sigma_true-sigma_hat,1)
     print('without weights: mu_true = %s, sigma_true = %s'%(mu_true,sigma_true))
     print('without weights: mu_hat = %s, sigma_hat = %s'%(mu_hat,sigma_hat))
@@ -163,7 +157,7 @@ def test_ML_slope():
 
     ''' with weights '''
     v = np.random.randn(x.shape[0]).clip(min=0)  
-    mu_hat,sigma_hat = pf.ML_bump(x,v=v)    
+    mu_hat,sigma_hat = md.ML_bump(x,v=v)    
     error = np.linalg.norm(mu_true-mu_hat,1) + np.linalg.norm(sigma_true-sigma_hat,1)
     print('with weights: mu_true = %s, sigma_true = %s'%(mu_true,sigma_true))
     print('with weights: mu_hat = %s, sigma_hat = %s'%(mu_hat,sigma_hat))
@@ -188,9 +182,9 @@ def test_f_all():
     sigma = np.array([[0.1,0.2],[0.1,0.1]],dtype=float) 
     
     fx = dl.f_all(x,a,mu,sigma,w)    
-    fx0 = pf.f_slope(x,a)
-    fx1 = pf.f_bump(x,mu[0],sigma[0])
-    fx2 = pf.f_bump(x,mu[1],sigma[1])
+    fx0 = md.f_slope(x,a)
+    fx1 = md.f_bump(x,mu[0],sigma[0])
+    fx2 = md.f_bump(x,mu[1],sigma[1])
     error = np.linalg.norm(fx - (w[0]*fx0 + w[1]*fx1 + w[2]*fx2),1)
     print('theoretical error = %0.8f'%error)
     
@@ -210,13 +204,13 @@ def test_f_all():
     
 def test_mixture_fit():
     def get_l(x,a,mu,sigma,w):
-        fx = pf.f_all(x,a,mu,sigma,w)
+        fx = md.f_all(x,a,mu,sigma,w)
         return np.mean(np.log(fx))
     # 2d slope+bump
     x,param = dl.load_x_mixture(opt=2)
     a_true,mu_true,sigma_true,w_true = param
     l_true = get_l(x,a_true,mu_true,sigma_true,w_true)
-    a_hat,mu_hat,sigma_hat,w_hat = pf.mixture_fit(x)
+    a_hat,mu_hat,sigma_hat,w_hat = md.mixture_fit(x)
     l_hat = get_l(x,a_hat,mu_hat,sigma_hat,w_hat)
     print('# 2d l_true=%s'%l_true)
     print('# 2d l_hat=%s'%l_hat)   
@@ -227,7 +221,7 @@ def test_mixture_fit():
     x,param = dl.load_x_mixture(opt=3)
     a_true,mu_true,sigma_true,w_true = param
     l_true = get_l(x,a_true,mu_true,sigma_true,w_true)
-    a_hat,mu_hat,sigma_hat,w_hat = pf.mixture_fit(x)
+    a_hat,mu_hat,sigma_hat,w_hat = md.mixture_fit(x)
     l_hat = get_l(x,a_hat,mu_hat,sigma_hat,w_hat)
     print('# 10d l_true=%s'%l_true)
     print('# 10d l_hat=%s'%l_hat)   
