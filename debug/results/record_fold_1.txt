@@ -1,185 +1,289 @@
 ### record for fold_1
-# K=2, alpha=0.10, n_full=10000, n_itr=50, random_state=0
-# n_sample=10000
-# p<0.000001: 27
-# p<0.000010: 50
-# p<0.000100: 105
-# p<0.000500: 170
+# K=5, alpha=0.10, n_full=1250, n_itr=1500, random_state=0
+# n_sample=1250
+# p<0.000001: 0
+# p<0.000010: 0
+# p<0.000100: 2
+# p<0.000500: 8
 
 ## method_init starts
-# t_BH=0.003120, n_null=2256, n_alt=315
+# t_BH=0.000619, n_null=302, n_alt=107
 ## Learning null distribution
 ## mixture_fit: initialization parameters
-# Slope: w=0.5000, a=[-0.1391 -0.0658]
-# Bump 0: w=0.2500
-         mu=[0.7283 0.4781]
-      sigma=[0.1592 0.2849]
-# Bump 1: w=0.2500
-         mu=[0.2563 0.5089]
-      sigma=[0.1604 0.2871]
+# Slope: w=0.5000, a=[ 0.11  -0.012]
+# Bump 0: w=0.1000
+         mu=[0.8231 0.499 ]
+      sigma=[0.102  0.1432]
+# Bump 1: w=0.1000
+         mu=[0.1661 0.6878]
+      sigma=[0.0982 0.174 ]
+# Bump 2: w=0.1000
+         mu=[0.7078 0.1597]
+      sigma=[0.1843 0.1021]
+# Bump 3: w=0.1000
+         mu=[0.2401 0.2798]
+      sigma=[0.1512 0.1571]
+# Bump 4: w=0.1000
+         mu=[0.6239 0.8307]
+      sigma=[0.1844 0.1058]
 
 ## mixture_fit: learned parameters
-# Slope: w=0.8604, a=[-0.2271 -0.0853]
-# Bump 0: w=0.0737
-         mu=[0.6712 0.4887]
-      sigma=[0.1604 1.    ]
-# Bump 1: w=0.0659
-         mu=[0.3856 0.5254]
-      sigma=[0.1914 1.    ]
+# Slope: w=0.5054, a=[-0.1244 -0.1342]
+# Bump 0: w=0.0808
+         mu=[0.8485 0.498 ]
+      sigma=[0.1062 0.1418]
+# Bump 1: w=0.1052
+         mu=[0.1605 0.6335]
+      sigma=[0.1044 0.1937]
+# Bump 2: w=0.1252
+         mu=[0.712  0.1226]
+      sigma=[0.2455 0.1178]
+# Bump 3: w=0.0529
+         mu=[0.2363 0.3462]
+      sigma=[0.1613 0.1302]
+# Bump 4: w=0.1305
+         mu=[0.62   0.8538]
+      sigma=[0.1713 0.1145]
 
 ## Learning alternative distribution
 ## mixture_fit: initialization parameters
-# Slope: w=0.5000, a=[0.4124 0.1002]
-# Bump 0: w=0.2500
-         mu=[0.7532 0.6102]
-      sigma=[0.1288 0.2527]
-# Bump 1: w=0.2500
-         mu=[0.2517 0.3734]
-      sigma=[0.1262 0.2469]
+# Slope: w=0.5000, a=[-0.2564  0.4027]
+# Bump 0: w=0.1000
+         mu=[0.7645 0.4349]
+      sigma=[0.097  0.2044]
+# Bump 1: w=0.1000
+         mu=[0.1129 0.6818]
+      sigma=[0.0459 0.1588]
+# Bump 2: w=0.1000
+         mu=[0.204  0.2059]
+      sigma=[0.0822 0.1332]
+# Bump 3: w=0.1000
+         mu=[0.4849 0.5052]
+      sigma=[0.0797 0.0779]
+# Bump 4: w=0.1000
+         mu=[0.5378 0.8439]
+      sigma=[0.2493 0.0782]
 
 ## mixture_fit: learned parameters
-# Slope: w=0.5976, a=[0.7832 0.2758]
-# Bump 0: w=0.1940
-         mu=[0.738  0.7495]
-      sigma=[0.0689 0.0975]
-# Bump 1: w=0.2084
-         mu=[0.2541 0.2364]
-      sigma=[0.0956 0.1116]
+# Slope: w=0.0929, a=[1.388  1.8758]
+# Bump 0: w=0.0638
+         mu=[0.7326 0.3874]
+      sigma=[0.0727 0.1851]
+# Bump 1: w=0.0618
+         mu=[0.1108 0.6565]
+      sigma=[0.0379 0.1992]
+# Bump 2: w=0.0703
+         mu=[0.1962 0.0952]
+      sigma=[0.0884 0.1568]
+# Bump 3: w=0.5939
+         mu=[0.4916 0.5077]
+      sigma=[0.0793 0.0745]
+# Bump 4: w=0.1173
+         mu=[0.4906 0.8338]
+      sigma=[1.     0.0748]
 
 
 ## Test result with method_init
-# Num of discovery: 417
+# Num of discovery: 52
 
 ## method_init finished
 
 ## rescale_mirror: before optimization
-# quantile of t (1,25,75,99): [0.0829 0.1158 0.1957 0.896 ]
-# gamma_pre=0.2007
-# gamma_l=0.0204, gamma_u=0.0408, D_hat=428, FD_hat=43, alpha_hat=0.1005
-# gamma_l=0.0204, gamma_u=0.0306, D_hat=400, FD_hat=37, alpha_hat=0.0925
-# final output: gamma=0.0056
+# quantile of t (1,25,75,99): [0.0085 0.046  0.1636 2.406 ]
+# gamma_pre=0.2035
+# gamma_l=0.0408, gamma_u=0.0612, D_hat=57, FD_hat=7, alpha_hat=0.1228
+# gamma_l=0.0408, gamma_u=0.0510, D_hat=53, FD_hat=6, alpha_hat=0.1132
+# gamma_l=0.0408, gamma_u=0.0459, D_hat=52, FD_hat=5, alpha_hat=0.0962
+# final output: gamma=0.0091
 
 ## choosing lambda0
-## lambda0=178.2, D=417, FD_hat=41, alpha_hat=0.098
-# lambda0=267.3, D_apr=390.2 (r err=0.064), FD_hat_apr=49.701 (r err=0.212)
-# lambda0=356.4, D_apr=393.2 (r err=0.057), FD_hat_apr=45.146 (r err=0.101)
-# lambda0=445.5, D_apr=396.6 (r err=0.049), FD_hat_apr=42.878 (r err=0.046)
-# lambda0=534.5, D_apr=399.8 (r err=0.041), FD_hat_apr=41.652 (r err=0.016)
-# lambda0=623.6, D_apr=402.6 (r err=0.035), FD_hat_apr=40.956 (r err=0.001)
-# lambda0=712.7, D_apr=404.9 (r err=0.029), FD_hat_apr=40.552 (r err=0.011)
-# lambda0=801.8, D_apr=406.7 (r err=0.025), FD_hat_apr=40.316 (r err=0.017)
-# lambda0=890.9, D_apr=408.2 (r err=0.021), FD_hat_apr=40.183 (r err=0.020)
-# lambda0=980.0, D_apr=409.4 (r err=0.018), FD_hat_apr=40.113 (r err=0.022)
-# lambda0=1069.1, D_apr=410.4 (r err=0.016), FD_hat_apr=40.083 (r err=0.022)
-# lambda0=1158.2, D_apr=411.2 (r err=0.014), FD_hat_apr=40.078 (r err=0.022)
-# lambda0=1247.3, D_apr=411.8 (r err=0.012), FD_hat_apr=40.089 (r err=0.022)
-# lambda0=1336.4, D_apr=412.3 (r err=0.011), FD_hat_apr=40.111 (r err=0.022)
-# lambda0=1425.5, D_apr=412.7 (r err=0.010), FD_hat_apr=40.139 (r err=0.021)
-# lambda0=1514.5, D_apr=413.0 (r err=0.009), FD_hat_apr=40.170 (r err=0.020)
-# lambda0=1603.6, D_apr=413.3 (r err=0.009), FD_hat_apr=40.204 (r err=0.019)
+## lambda0=112.0, D=52, FD_hat=6, alpha_hat=0.115
+# lambda0=168.0, D_apr=57.1 (r err=0.097), FD_hat_apr=7.293 (r err=0.215)
+# lambda0=224.0, D_apr=55.8 (r err=0.073), FD_hat_apr=6.427 (r err=0.071)
+# lambda0=280.0, D_apr=55.0 (r err=0.059), FD_hat_apr=6.049 (r err=0.008)
+# lambda0=336.0, D_apr=54.6 (r err=0.049), FD_hat_apr=5.873 (r err=0.021)
+# lambda0=392.0, D_apr=54.3 (r err=0.043), FD_hat_apr=5.792 (r err=0.035)
+# lambda0=448.0, D_apr=54.0 (r err=0.039), FD_hat_apr=5.760 (r err=0.040)
+# lambda0=504.0, D_apr=53.9 (r err=0.036), FD_hat_apr=5.755 (r err=0.041)
+# lambda0=560.0, D_apr=53.7 (r err=0.034), FD_hat_apr=5.764 (r err=0.039)
+# lambda0=616.0, D_apr=53.6 (r err=0.032), FD_hat_apr=5.781 (r err=0.036)
+# lambda0=672.0, D_apr=53.6 (r err=0.030), FD_hat_apr=5.803 (r err=0.033)
+# lambda0=728.0, D_apr=53.5 (r err=0.029), FD_hat_apr=5.825 (r err=0.029)
+# lambda0=784.0, D_apr=53.5 (r err=0.028), FD_hat_apr=5.848 (r err=0.025)
+# lambda0=840.0, D_apr=53.4 (r err=0.027), FD_hat_apr=5.869 (r err=0.022)
+# lambda0=896.0, D_apr=53.4 (r err=0.026), FD_hat_apr=5.889 (r err=0.019)
+# lambda0=952.0, D_apr=53.3 (r err=0.026), FD_hat_apr=5.907 (r err=0.016)
+# lambda0=1008.0, D_apr=53.3 (r err=0.025), FD_hat_apr=5.923 (r err=0.013)
+# lambda0=1064.0, D_apr=53.3 (r err=0.025), FD_hat_apr=5.937 (r err=0.011)
+# lambda0=1120.0, D_apr=53.3 (r err=0.024), FD_hat_apr=5.949 (r err=0.009)
+# lambda0=1176.0, D_apr=53.2 (r err=0.024), FD_hat_apr=5.959 (r err=0.007)
+# lambda0=1232.0, D_apr=53.2 (r err=0.023), FD_hat_apr=5.968 (r err=0.005)
+# lambda0=1288.0, D_apr=53.2 (r err=0.023), FD_hat_apr=5.975 (r err=0.004)
+# lambda0=1344.0, D_apr=53.2 (r err=0.023), FD_hat_apr=5.981 (r err=0.003)
+# lambda0=1400.0, D_apr=53.2 (r err=0.022), FD_hat_apr=5.986 (r err=0.002)
+# lambda0=1456.0, D_apr=53.1 (r err=0.022), FD_hat_apr=5.989 (r err=0.002)
+# lambda0=1512.0, D_apr=53.1 (r err=0.022), FD_hat_apr=5.992 (r err=0.001)
+# lambda0=1568.0, D_apr=53.1 (r err=0.021), FD_hat_apr=5.994 (r err=0.001)
+# lambda0=1624.0, D_apr=53.1 (r err=0.021), FD_hat_apr=5.995 (r err=0.001)
+# lambda0=1680.0, D_apr=53.1 (r err=0.021), FD_hat_apr=5.996 (r err=0.001)
+# lambda0=1736.0, D_apr=53.1 (r err=0.020), FD_hat_apr=5.996 (r err=0.001)
+# lambda0=1792.0, D_apr=53.0 (r err=0.020), FD_hat_apr=5.995 (r err=0.001)
+# lambda0=1848.0, D_apr=53.0 (r err=0.020), FD_hat_apr=5.995 (r err=0.001)
 
 ## optimization paramter:
-# n_itr=50, n_samp=10000, lambda0=1603.0000, lambda1=100.0000
+# n_itr=1500, n_samp=1250, lambda0=1847.0000, lambda1=100.0000
 
 ## method_single_fold: initialization
-# Slope: a=[0.7832 0.2758]
-         b=-6.2524
-# Bump 0: w=-3.6495
-         mu=[0.738  0.7495]
-      sigma=[1.3157 1.1344]
-# Bump 1: w=-4.0240
-         mu=[0.2541 0.2364]
-      sigma=[0.6843 0.8656]
+# Slope: a=[1.388  1.8758]
+         b=-8.9310
+# Bump 0: w=-4.9641
+         mu=[0.7326 0.3874]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.3909
+         mu=[0.1108 0.6565]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.5845
+         mu=[0.1962 0.0952]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.9292
+         mu=[0.4916 0.5077]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-5.1164
+         mu=[0.4906 0.8338]
+      sigma=[0.0043 1.9693]
 
 
 ## iteration 0: 
-# n_rej=417, n_rej_apr=413.3, FD_hat=41, FD_hat_apr=40.2
-# loss1=-0.0413, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0973
-# Slope: a=[0.8032 0.2958]
-         b=-6.2324
-# Bump 0: w=-3.6295
-         mu=[0.758  0.7295]
-      sigma=[1.2957 1.1144]
-# Bump 1: w=-4.0040
-         mu=[0.2341 0.2564]
-      sigma=[0.6643 0.8456]
+# n_rej=52, n_rej_apr=53.0, FD_hat=6, FD_hat_apr=6.0
+# loss1=-0.0424, loss2=0.0553, FDP=0.0000, FDP_hat_apr=0.1130
+# Slope: a=[1.368  1.8558]
+         b=-8.9510
+# Bump 0: w=-4.9841
+         mu=[0.7526 0.3674]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.4109
+         mu=[0.0908 0.6765]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.5645
+         mu=[0.2162 0.0752]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.9492
+         mu=[0.5116 0.5277]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-5.0964
+         mu=[0.5106 0.8138]
+      sigma=[0.0043 1.9693]
 
-## iteration 10: 
-# n_rej=418, n_rej_apr=417.1, FD_hat=42, FD_hat_apr=41.0
-# loss1=-0.0417, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0984
-# Slope: a=[0.7642 0.2699]
-         b=-6.2632
-# Bump 0: w=-3.6480
-         mu=[0.7961 0.6592]
-      sigma=[1.3041 1.1308]
-# Bump 1: w=-3.9664
-         mu=[0.1985 0.2244]
-      sigma=[0.4932 0.8619]
+## iteration 300: 
+# n_rej=64, n_rej_apr=64.3, FD_hat=5, FD_hat_apr=5.5
+# loss1=-0.0515, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0861
+# Slope: a=[1.055 1.608]
+         b=-9.2206
+# Bump 0: w=-5.0938
+         mu=[0.7305 0.1479]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.4044
+         mu=[0.0883 0.9051]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.2034
+         mu=[0.2173 0.0851]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.8929
+         mu=[0.5181 0.5405]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-4.0465
+         mu=[0.2706 0.7901]
+      sigma=[0.0043 1.9693]
 
-## iteration 20: 
-# n_rej=412, n_rej_apr=412.8, FD_hat=39, FD_hat_apr=37.8
-# loss1=-0.0413, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0917
-# Slope: a=[0.7358 0.265 ]
-         b=-6.2799
-# Bump 0: w=-3.6723
-         mu=[0.7794 0.695 ]
-      sigma=[1.3215 1.1252]
-# Bump 1: w=-3.9725
-         mu=[0.1657 0.2358]
-      sigma=[0.3122 0.8547]
+## iteration 600: 
+# n_rej=64, n_rej_apr=63.5, FD_hat=4, FD_hat_apr=5.0
+# loss1=-0.0508, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0786
+# Slope: a=[1.0249 1.5863]
+         b=-9.2398
+# Bump 0: w=-5.0866
+         mu=[0.6854 0.1526]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.4051
+         mu=[0.0875 0.9043]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.1946
+         mu=[0.2117 0.0883]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.8863
+         mu=[0.518 0.541]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-3.9761
+         mu=[0.2468 0.7505]
+      sigma=[0.0043 1.9693]
 
-## iteration 30: 
-# n_rej=440, n_rej_apr=439.7, FD_hat=43, FD_hat_apr=43.4
-# loss1=-0.0440, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0986
-# Slope: a=[0.7468 0.3025]
-         b=-6.2545
-# Bump 0: w=-3.6584
-         mu=[0.7768 0.7061]
-      sigma=[1.3    1.0806]
-# Bump 1: w=-3.9251
-         mu=[0.1782 0.2539]
-      sigma=[0.0828 0.7896]
+## iteration 900: 
+# n_rej=65, n_rej_apr=64.9, FD_hat=7, FD_hat_apr=6.2
+# loss1=-0.0519, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0959
+# Slope: a=[1.0329 1.5978]
+         b=-9.2281
+# Bump 0: w=-5.0498
+         mu=[0.7193 0.1539]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.4050
+         mu=[0.0872 0.904 ]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.1888
+         mu=[0.218  0.0901]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.8836
+         mu=[0.5177 0.5405]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-3.9354
+         mu=[0.2724 0.7913]
+      sigma=[0.0043 1.9693]
 
-## iteration 40: 
-# n_rej=425, n_rej_apr=423.1, FD_hat=40, FD_hat_apr=39.5
-# loss1=-0.0423, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0933
-# Slope: a=[0.714  0.2981]
-         b=-6.2780
-# Bump 0: w=-3.6191
-         mu=[0.8143 0.7155]
-      sigma=[1.2767 1.0299]
-# Bump 1: w=-3.9719
-         mu=[0.1196 0.2271]
-      sigma=[0.1555 0.7769]
+## iteration 1200: 
+# n_rej=65, n_rej_apr=64.9, FD_hat=6, FD_hat_apr=6.1
+# loss1=-0.0519, loss2=0.0000, FDP=0.0000, FDP_hat_apr=0.0946
+# Slope: a=[1.0265 1.5931]
+         b=-9.2319
+# Bump 0: w=-5.0369
+         mu=[0.7178 0.155 ]
+      sigma=[0.805  0.3217]
+# Bump 1: w=-4.4049
+         mu=[0.0865 0.9033]
+      sigma=[2.9685 0.2776]
+# Bump 2: w=-4.1833
+         mu=[0.2162 0.092 ]
+      sigma=[0.5453 0.4479]
+# Bump 3: w=-1.8809
+         mu=[0.5177 0.5408]
+      sigma=[0.677  1.9835]
+# Bump 4: w=-3.9163
+         mu=[0.2697 0.7833]
+      sigma=[0.0043 1.9693]
 
 ## rescale_mirror: after method_single_fold
-# quantile of t (1,25,75,99): [0.0025 0.0034 0.0072 0.0267]
+# quantile of t (1,25,75,99): [0.0003 0.0016 0.0141 0.107 ]
 # gamma_pre=1.0000
-# gamma_l=0.6275, gamma_u=1.2551, D_hat=424, FD_hat=39, alpha_hat=0.0920
-# gamma_l=0.9413, gamma_u=1.2551, D_hat=445, FD_hat=44, alpha_hat=0.0989
-# gamma_l=1.0982, gamma_u=1.2551, D_hat=456, FD_hat=50, alpha_hat=0.1096
-# gamma_l=1.0982, gamma_u=1.1767, D_hat=453, FD_hat=46, alpha_hat=0.1015
-# gamma_l=1.0982, gamma_u=1.1374, D_hat=447, FD_hat=46, alpha_hat=0.1029
-# gamma_l=1.0982, gamma_u=1.1178, D_hat=447, FD_hat=44, alpha_hat=0.0984
-# final output: gamma=1.1129
+# gamma_l=0.7313, gamma_u=1.0969, D_hat=63, FD_hat=5, alpha_hat=0.0794
+# gamma_l=0.9141, gamma_u=1.0969, D_hat=65, FD_hat=7, alpha_hat=0.1077
+# gamma_l=0.9141, gamma_u=1.0055, D_hat=65, FD_hat=6, alpha_hat=0.0923
+# gamma_l=0.9598, gamma_u=1.0055, D_hat=65, FD_hat=7, alpha_hat=0.1077
+# gamma_l=0.9598, gamma_u=0.9827, D_hat=65, FD_hat=7, alpha_hat=0.1077
+# gamma_l=0.9598, gamma_u=0.9712, D_hat=65, FD_hat=6, alpha_hat=0.0923
+# final output: gamma=0.9684
 
 ## Test result with method_single_fold
-# Num of discovery: 447
+# Num of discovery: 65
 
 
 ## rescale_mirror: cv
-# quantile of t (1,25,75,99): [0.0025 0.0034 0.0072 0.0271]
+# quantile of t (1,25,75,99): [0.0003 0.0018 0.0136 0.1208]
 # gamma_pre=1.0000
-# gamma_l=0.0000, gamma_u=0.6270, D_hat=280, FD_hat=23, alpha_hat=0.0821
-# gamma_l=0.3135, gamma_u=0.6270, D_hat=331, FD_hat=32, alpha_hat=0.0967
-# gamma_l=0.4702, gamma_u=0.6270, D_hat=350, FD_hat=37, alpha_hat=0.1057
-# gamma_l=0.4702, gamma_u=0.5486, D_hat=339, FD_hat=35, alpha_hat=0.1032
-# gamma_l=0.4702, gamma_u=0.5094, D_hat=337, FD_hat=33, alpha_hat=0.0979
-# gamma_l=0.4898, gamma_u=0.5094, D_hat=338, FD_hat=35, alpha_hat=0.1036
-# gamma_l=0.4898, gamma_u=0.4996, D_hat=338, FD_hat=34, alpha_hat=0.1006
-# gamma_l=0.4898, gamma_u=0.4947, D_hat=338, FD_hat=33, alpha_hat=0.0976
-# final output: gamma=0.4935
+# gamma_l=0.0000, gamma_u=0.3513, D_hat=28, FD_hat=1, alpha_hat=0.0357
+# gamma_l=0.1757, gamma_u=0.3513, D_hat=31, FD_hat=2, alpha_hat=0.0645
+# gamma_l=0.2635, gamma_u=0.3513, D_hat=32, FD_hat=5, alpha_hat=0.1562
+# gamma_l=0.2635, gamma_u=0.3074, D_hat=32, FD_hat=4, alpha_hat=0.1250
+# gamma_l=0.2635, gamma_u=0.2855, D_hat=32, FD_hat=3, alpha_hat=0.0938
+# gamma_l=0.2745, gamma_u=0.2855, D_hat=32, FD_hat=3, alpha_hat=0.0938
+# final output: gamma=0.2827
 
 ## Test result with method_cv fold_1
-# Num of discovery: 338
+# Num of discovery: 32
 

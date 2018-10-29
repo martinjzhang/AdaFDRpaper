@@ -1,0 +1,2 @@
+python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_speed_dim' -o 'simu_speed_dim' &
+python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_speed_sample' -o 'simu_speed_sample' &

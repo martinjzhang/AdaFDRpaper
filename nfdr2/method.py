@@ -46,7 +46,7 @@ def feature_preprocess(x, qt_norm=True, continous_rank=True):
         x = x.reshape([-1,1])
     n,d = x.shape     
     if qt_norm:
-        x=rank(x,continous_rank=continous_rank)       
+        x=rank(x, continous_rank=continous_rank)       
     # Rescale to be within [0,1].
     x = (x-x.min(axis=0))/(x.max(axis=0)-x.min(axis=0))        
     return x
@@ -106,11 +106,11 @@ def reorder_discrete(x, x_val, x_order):
 
 def feature_explore(p, x_input, alpha=0.1, n_full=None, vis_dim=None,\
                     cate_name={}, output_folder=None,\
-                    h=None):
+                    title_list=None, h=None):
     """Provide a visualization of pi1/pi0 for each dimension,
     to visualize the amount of information carried in each dimension.
     
-    Args:
+        Args:
         p ((n,) ndarray): the p-values.
         x_input ((n,d) ndarray): The covaraites. The discrete features should be coded by
             integers starting from 0.
@@ -123,43 +123,46 @@ def feature_explore(p, x_input, alpha=0.1, n_full=None, vis_dim=None,\
             no names. Dimension 1 is discrete and has two values 0,1, whose corresponding
             names are name0, name1
         output_folder (string): The output directory.
+        title_list (list of strings): Titles for each figure. 
         h ((n,) ndarray): The ground truth (None if not available). 
     
     Returns:
     """
     def plot_feature_1d(x_margin, p, x_null, x_alt, meta_info,\
                         title='',cate_name=None, output_folder=None,\
-                        h=None):
+                        h=None, ):
         # Some parameters for generating the figures.
-        feature_type,cate_order = meta_info       
-        x_min,x_max = np.percentile(x_margin,[1,99])
+        feature_type,cate_order,x_val_ = meta_info       
+        x_min,x_max = np.percentile(x_margin, [1,99])
         x_range = x_max-x_min
-        x_min -= 0.05*x_range
-        x_max += 0.05*x_range
-        bins = np.linspace(x_min,x_max,101)
+        x_min -= 0.01*x_range
+        x_max += 0.01*x_range
+        bins = np.linspace(x_min,x_max, 51)
         bin_width = bins[1]-bins[0]
         # Ploting for the continuous case and the discrete case.
         if feature_type == 'continuous':         
             # Continuous: use kde to estimate the probability.
             n_bin = bins.shape[0]-1
             x_grid = (bins+bin_width/2)[0:-1]
-            p_null,_ = np.histogram(x_null,bins=bins) 
-            p_alt,_= np.histogram(x_alt,bins=bins)   
+            p_null,_ = np.histogram(x_null, bins=bins) 
+            p_alt,_ = np.histogram(x_alt, bins=bins)   
             p_null = p_null+1
             p_alt = p_alt+1
             p_null = p_null/np.sum(p_null)*n_bin
             p_alt = p_alt/np.sum(p_alt)*n_bin            
             kde_null = stats.gaussian_kde(x_null).evaluate(x_grid)
             kde_alt = stats.gaussian_kde(x_alt).evaluate(x_grid)
-            psuedo_density = np.percentile(kde_null, [0.1])
+            psuedo_density = np.min(kde_null[kde_null>0])/10
+            psuedo_density = psuedo_density.clip(min=1e-20)
             p_ratio = (kde_alt+psuedo_density)/(kde_null+psuedo_density)
+            
         else: 
             # Discrete: use the empirical counts.
-            unique_null,cts_null = np.unique(x_null,return_counts=True)
-            unique_alt,cts_alt = np.unique(x_alt,return_counts=True)            
+            unique_null,cts_null = np.unique(x_null, return_counts=True)
+            unique_alt,cts_alt = np.unique(x_alt, return_counts=True)            
             unique_val = np.array(list(set(list(unique_null)+list(unique_alt))))
             unique_val = np.sort(unique_val)            
-            p_null,p_alt = np.zeros([unique_val.shape[0]]),np.zeros([unique_val.shape[0]])          
+            p_null,p_alt = np.zeros([unique_val.shape[0]]), np.zeros([unique_val.shape[0]])          
             for i,key in enumerate(unique_null): 
                 p_null[unique_val==key] = cts_null[i]                
             for i,key in enumerate(unique_alt): 
@@ -171,85 +174,111 @@ def feature_explore(p, x_input, alpha=0.1, n_full=None, vis_dim=None,\
             x_grid = (np.arange(unique_val.shape[0])+1)/(unique_val.shape[0]+1)
             x_min,x_max,bin_width = 0,1,1/(unique_val.shape[0]+1)
             if cate_name is None: 
-                cate_name_ = cate_order
+                cate_name_ = x_val_[cate_order]
             else:
-                cate_name_ = []
+                cate_name_ = []  
                 for i in cate_order:
-                    cate_name_.append(cate_name[i])
-        # Generate the figure.            
-        plt.figure(figsize=[8,8])
-        plt.subplot(311)
-        rnd_idx=np.random.permutation(p.shape[0])[0:np.min([10000,p.shape[0]])]
+                    cate_name_.append(cate_name[x_val_[i]])
+        # Generate the figure.
+        rnd_idx=np.random.permutation(p.shape[0])[0:np.min([10000, p.shape[0]])]
+        if feature_type == 'continuous':
+            pts_jitter = 0*(np.random.rand(10000)-0.5)
+        else:
+            pts_jitter = 0.75*(np.random.rand(10000)-0.5)
+        plt.figure(figsize=[5, 3])
         p = p[rnd_idx]
         x_margin = x_margin[rnd_idx]
         # Ground truth.
         if h is not None:
             h = h[rnd_idx]
-            plt.scatter(x_margin[h==1],p[h==1],color='orange',alpha=0.3,s=4,label='alt')
-            plt.scatter(x_margin[h==0],p[h==0],color='royalblue',alpha=0.3,s=4,label='null')
+            plt.scatter(x_margin[h==1]+pts_jitter[h==1],\
+                        p[h==1], color='orange', alpha=0.3, s=4, label='alt')
+            plt.scatter(x_margin[h==0]+pts_jitter[h==0],\
+                        p[h==0], color='steelblue', alpha=0.3, s=4, label='null')
         else:
-            plt.scatter(x_margin,p,color='royalblue',alpha=0.3,s=4,label='alt')
-        plt.ylim([0,(p[p<0.5].max())])
-        plt.ylabel('p-value')
-        plt.title(title+' (%s)'%feature_type)
-        plt.subplot(312)
-        plt.bar(x_grid,p_null,width=bin_width,color='royalblue',alpha=0.6,label='null')
-        plt.bar(x_grid,p_alt,width=bin_width,color='darkorange',alpha=0.6,label='alt')
-        plt.xlim([x_min,x_max])
-        if feature_type=='discrete': 
-            plt.xticks(x_grid,cate_name_,rotation=45)
-        plt.ylabel('null/alt proportion')
-        plt.legend()
-        plt.subplot(313)
-        if feature_type == 'continuous':
-            plt.plot(x_grid,p_ratio,color='seagreen',label='ratio',linewidth=4) 
-        else:
-            plt.plot(x_grid,p_ratio,color='seagreen',marker='o',label='ratio',linewidth=4)
-            plt.xticks(x_grid,cate_name_,rotation=45)
-        plt.xlim([x_min,x_max])
-        y_min,y_max = plt.ylim()
-        plt.ylim([0,y_max])
-        plt.ylabel('ratio')
-        plt.xlabel('Covariate $x$')
+            plt.scatter(x_margin+pts_jitter,\
+                        p, color='steelblue', alpha=0.3, s=4, label='alt')
+        if x_max>1e4:
+            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        plt.ylim([0, min((p[p<0.5].max()), 0.05)])
+        plt.ylabel('p-value', fontsize=14)
+        plt.xlabel('covariate $x$', fontsize=14)
+        if feature_type == 'discrete':
+            plt.xticks(x_val_, cate_name_, rotation=45, fontsize=12)
         plt.tight_layout()
         if output_folder is not None:
-            plt.savefig(output_folder+'/explore_%s.png'%title)
+            plt.savefig(output_folder+'/explore_p_%s.png'%title)
+            plt.savefig(output_folder+'/explore_p_%s.pdf'%title)
             plt.close()
         else:
             plt.show()
-    # Make a copy of the data.
+        plt.figure(figsize=[5, 3])
+        plt.bar(x_grid, p_null, width=bin_width, color='steelblue', alpha=0.6, label='null')
+        plt.bar(x_grid, p_alt, width=bin_width, color='orange', alpha=0.6, label='alt')
+        plt.xlim([x_min, x_max])
+        if feature_type=='discrete': 
+            plt.xticks(x_grid, cate_name_, rotation=45, fontsize=12)
+        elif x_max>1e4:
+            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        plt.ylabel('null/alt proportion', fontsize=14)
+        plt.legend(fontsize=12)
+        # plt.subplot(313)
+        # if feature_type == 'continuous':
+        #     plt.plot(x_grid, p_ratio, color='seagreen', label='ratio', linewidth=4) 
+        # else:
+        #     plt.plot(x_grid, p_ratio, color='seagreen', marker='o', label='ratio', linewidth=4)
+        #     plt.xticks(x_grid, cate_name_, rotation=45)
+        # plt.xlim([x_min, x_max])
+        # y_min,y_max = plt.ylim()
+        # plt.ylim([0, y_max])
+        # plt.ylabel('ratio')
+        plt.xlabel('covariate $x$', fontsize=14)
+        plt.tight_layout()
+        if output_folder is not None:
+            plt.savefig(output_folder+'/explore_ratio_%s.png'%title)
+            plt.savefig(output_folder+'/explore_ratio_%s.pdf'%title)
+            plt.close()
+        else:
+            plt.show()
+    # Start of the main function. Make a copy of the data.
+    np.random.seed(0)
     x = x_input.copy()
     if n_full is None: 
         n_full = p.shape[0]
     if len(x.shape) == 1: 
-        x = x.reshape([-1,1])
+        x = x.reshape([-1, 1])
     _,d = x.shape   
     # Reorder the discrete features.
     meta_info = []        
     for i in range(d):
-        feature_type = get_feature_type(x[:,i])
+        feature_type = get_feature_type(x[:, i])
         if feature_type == 'discrete':
-            x_val = np.sort(np.unique(x[:,i]))
-            x_order = get_order_discrete(p, x[:,i], x_val, n_full=n_full)
-            x[:,i] = reorder_discrete(x[:,i], x_val, x_order)
-            meta_info.append([feature_type, x_order])
+            x_val = np.sort(np.unique(x[:, i]))
+            x_order = get_order_discrete(p, x[:, i], x_val, n_full=n_full)
+            x[:, i] = reorder_discrete(x[:, i], x_val, x_order)
+            meta_info.append([feature_type, x_order, x_val])
         else:
-            meta_info.append([feature_type, None])    
+            meta_info.append([feature_type, None, None])    
     # Separate the null proportion and the alternative proportion.
-    _,t_BH = bh(p,n_full=n_full,alpha=0.1)
+    _,t_BH = bh(p, n_full=n_full, alpha=0.1)
     x_null,x_alt = x[p>0.75],x[p<t_BH]      
     # Generate figures.
     if vis_dim is None: 
-        vis_dim = np.arange(min(4,d))    
+        vis_dim = np.arange(min(5, d))    
     for i in vis_dim:
-        x_margin = x[:,i]
-        temp_null,temp_alt = x_null[:,i],x_alt[:,i]
+        x_margin = x[:, i]
+        temp_null,temp_alt = x_null[:, i], x_alt[:, i]
         if i in cate_name.keys():
-            plot_feature_1d(x_margin,p,temp_null,temp_alt,meta_info[i],title='feature_%s'%str(i+1),\
-                            cate_name=cate_name[i],output_folder=output_folder,h=h)
+            temp_cate_name = cate_name[i]
+        else: 
+            temp_cate_name = None
+        if title_list is not None:
+            temp_title = title_list[i]
         else:
-            plot_feature_1d(x_margin,p,temp_null,temp_alt,meta_info[i],title='feature_%s'%str(i+1),\
-                            output_folder=output_folder,h=h)
+            temp_title = 'feature_%s'%str(i+1)
+        plot_feature_1d(x_margin, p, temp_null, temp_alt,\
+                        meta_info[i], title=temp_title,\
+                        cate_name=temp_cate_name, output_folder=output_folder, h=h)            
 
 def preprocess_two_fold(p1, x1, x2, n_full, f_write):
     """Data preprocessing two folds of data. Note that to prevent overfitting,
@@ -341,14 +370,14 @@ def method_single_fold_wrapper(data):
         f_write.close()
     return np.sum(p2<t2), t2, [a,b,w,mu,sigma,gamma]
 
-def method_hs(p, x, K=3, alpha=0.1, n_full=None, n_itr=1500, qt_norm=True,\
+def method_hs(p_input, x_input, K=3, alpha=0.1, n_full=None, n_itr=1500, qt_norm=True,\
               h=None, verbose=False, output_folder=None, random_state=0,\
               single_core=False, fast_mode=False):
     """Hypothesis testing with hypothesis splitting.
 
     Args:
-        p ((n,) ndarray): The p-values.
-        x ((n,d) ndarray): The covaraites. The discrete features should be coded by integers
+        p_input ((n,) ndarray): The p-values.
+        x_input ((n,d) ndarray): The covaraites. The discrete features should be coded by integers
             starting from 0.
         K (int): The number of bump components.
         alpha (float): The nominal FDR level.
@@ -368,6 +397,8 @@ def method_hs(p, x, K=3, alpha=0.1, n_full=None, n_itr=1500, qt_norm=True,\
         theta (list): Learned (reparametrized) parameters with the format [a,b,w,mu,sigma,gamma].
     """
     np.random.seed(random_state)
+    p = np.copy(p_input)
+    x = np.copy(x_input)
     start_time=time.time()
     if len(x.shape) == 1: 
         x = x.reshape([-1,1])
@@ -427,14 +458,15 @@ def method_hs(p, x, K=3, alpha=0.1, n_full=None, n_itr=1500, qt_norm=True,\
         print('#time total: %0.4fs'%(time.time()-start_time))         
     return n_rej, t, theta
 
-def method_single_fold(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,h=None,verbose=False,\
-                       output_folder=None,fold_number=0,random_state=0,f_write=None,\
+def method_single_fold(p_input, x_input, K=5, alpha=0.1, n_full=None,\
+                       n_itr=1500, h=None, verbose=False,\
+                       output_folder=None, fold_number=0, random_state=0, f_write=None,\
                        fast_mode=False):
     """Learn the decision threshold via optimization.
 
     Args:
-        p ((n,) ndarray): The p-values.
-        x ((n,d) ndarray): The covaraites. The data is assumed to have been preprocessed.
+        p_input ((n,) ndarray): The p-values.
+        x_input ((n,d) ndarray): The covaraites. The data is assumed to have been preprocessed.
         K (int): The number of bump components.
         alpha (float): The nominal FDR level.
         n_full (int): Total number of hypotheses before filtering.
@@ -453,6 +485,8 @@ def method_single_fold(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,h=None,verbose=F
         theta (list): Learned (reparametrized) parameters with the format [a,b,w,mu,sigma,gamma].
     """
     torch.manual_seed(random_state)
+    p = np.copy(p_input)
+    x = np.copy(x_input)
     if len(x.shape)==1:
         x = x.reshape([-1,1])
     d = x.shape[1]
@@ -476,13 +510,15 @@ def method_single_fold(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,h=None,verbose=F
     t = gamma*t
     b,w = b+np.log(gamma),w+np.log(gamma)
     # Return the result without optimization.
-    if fast_mode:
+    if fast_mode or (np.sum(p<t)<100):
+        if f_write is not None:
+            f_write.write('\n# Less than 100 discoveries. Switch to fast mode\n')
         n_rej = np.sum(p < t)
         theta = [a,b,w,mu,sigma,gamma]
         return n_rej, t, theta
     # Setting parameters for the optimization.
     # lambda0: adaptively set based on the approximation accuracy of the sigmoid function.
-    lambda0,n_rej,n_fd = 1/t.mean(),np.sum(p<t),np.sum(p>1-t)    
+    lambda0,n_rej,n_fd = 1/t.mean(),max(np.sum(p<t),1),np.sum(p>1-t)
     if f_write is not None:
         f_write.write('\n## choosing lambda0\n')
         f_write.write('## lambda0=%0.1f, D=%d, FD_hat=%d, alpha_hat=%0.3f\n'%(lambda0,n_rej,n_fd,n_fd/n_rej))        
@@ -534,6 +570,7 @@ def method_single_fold(p,x,K=5,alpha=0.1,n_full=None,n_itr=1500,h=None,verbose=F
         scheduler.step()
         # Calculate the model.
         optimizer.zero_grad()
+        sigma = sigma.clamp(min=1e-4)
         t = torch.exp(torch.matmul(x,a)+b)
         for i in range(K):
             t = t+torch.exp(w[i]-torch.matmul((x-mu[i,:])**2,sigma[i,:] * sigma_mean))
@@ -622,7 +659,9 @@ def reparametrize(a_init, mu_init, sigma_init, w_init, d):
     for k in range(K):
         for i in range(d):
             c[k, i] = sp.stats.norm.cdf(1,loc=mu_init[k,i],scale=sigma_init[k,i])\
-                - sp.stats.norm.cdf(0,loc=mu_init[k,i],scale=sigma_init[k,i])    
+                - sp.stats.norm.cdf(0,loc=mu_init[k,i],scale=sigma_init[k,i])
+    w_init = (w_init + 1e-8)/np.sum(w_init + 1e-8)
+    c = c.clip(min=0.1)
     w = np.log(w_init[1:])\
         - d/2*np.log(2*np.pi)\
         - np.log(sigma_init).sum(axis=1)\
@@ -680,7 +719,7 @@ def rescale_mirror(t,p,alpha,f_write=None,title=''):
     gamma_grid = np.linspace(0, 0.2/np.mean(t), 50)[1:]
     alpha_hat = np.zeros([gamma_grid.shape[0]], dtype=float)
     for i in range(gamma_grid.shape[0]):
-        alpha_hat[i] = np.sum(p>1-t*gamma_grid[i])/np.sum(p<t*gamma_grid[i])
+        alpha_hat[i] = np.sum(p>1-t*gamma_grid[i])/max(np.sum(p<t*gamma_grid[i]), 1)
     if np.sum(alpha_hat<alpha) > 0:
         gamma_l = np.max(gamma_grid[alpha_hat<alpha])
     else:
@@ -691,9 +730,9 @@ def rescale_mirror(t,p,alpha,f_write=None,title=''):
         gamma_u = gamma_grid[-1]
     # Binary search.
     gamma_m = (gamma_u+gamma_l)/2    
-    while gamma_u-gamma_l>1e-2 or (np.sum(p>1-t*gamma_m)/np.sum(p<t*gamma_m) > alpha):
+    while gamma_u-gamma_l>1e-2 or (np.sum(p>1-t*gamma_m)/max(np.sum(p<t*gamma_m), 1) > alpha):
         gamma_m = (gamma_l+gamma_u)/2
-        D_hat = np.sum(p<t*gamma_m)
+        D_hat = max(np.sum(p<t*gamma_m), 1)
         FD_hat = np.sum(p>1-t*gamma_m)
         alpha_hat = FD_hat/D_hat         
         if f_write is not None:
@@ -707,13 +746,13 @@ def rescale_mirror(t,p,alpha,f_write=None,title=''):
         f_write.write('# final output: gamma=%0.4f\n'%((gamma_u+gamma_l)/2*gamma_pre))
     return (gamma_u+gamma_l)/2*gamma_pre 
 
-def method_init(p, x, K, alpha=0.1, n_full=None, h=None, verbose=False,
+def method_init(p_input, x_input, K, alpha=0.1, n_full=None, h=None, verbose=False,
                 output_folder=None, random_state=0, fold_number=0, f_write=None):
     """Initialization for method_single_fold that fits a mixture model with bump+slope.
 
     Args:
-        p ((n,) ndarray): The p-values
-        x ((n,d) ndarray): The covaraites.
+        p_input ((n,) ndarray): The p-values
+        x_input ((n,d) ndarray): The covaraites.
         K (int): The number of bump components.
         alpha (float): The nominal FDR level.
         n_full (int): Total number of hypotheses before filtering.
@@ -730,6 +769,8 @@ def method_init(p, x, K, alpha=0.1, n_full=None, h=None, verbose=False,
         w ((n,) ndarray): proportion of each component.
     """
     np.random.seed(random_state)
+    p = np.copy(p_input)
+    x = np.copy(x_input)
     if f_write is not None:
         f_write.write('## method_init starts\n')        
     if len(x.shape)==1: 
@@ -739,7 +780,10 @@ def method_init(p, x, K, alpha=0.1, n_full=None, h=None, verbose=False,
         n_full = n_samp            
     # Extract the null and the alternative proportion.
     _,t_BH = bh(p,n_full=n_full,alpha=0.1)
-    x_null,x_alt = x[p>0.75],x[p<t_BH]   
+    if np.sum(p<t_BH) > 100:
+        x_null,x_alt = x[p>0.75],x[p<t_BH]
+    else:
+        x_null,x_alt = x[p>0.75],x[p<0.05]
     if f_write is not None:
         f_write.write('# t_BH=%0.6f, n_null=%d, n_alt=%d\n'%(t_BH, x_null.shape[0],x_alt.shape[0]))      
     # Fit the null distribution.
@@ -870,7 +914,7 @@ def mixture_fit(x,K=3,x_w=None,n_itr=100,verbose=False,random_state=0,f_write=No
             plt.savefig(output_folder+'/projection%s_fold_%d.png'%(suffix,fold_number))        
         else:
             plt.figure(figsize=[8,12])
-            n_figure = min(d,4)
+            n_figure = min(d, 5)
             for i_dim in range(n_figure):        
                 plt.subplot(str(n_figure)+'1'+str(i_dim+1))
                 plt.hist(x[:,i_dim],bins=bins_,weights=x_w/np.sum(x_w)*100)  
@@ -1120,12 +1164,12 @@ def bh(p,alpha=0.1,n_full=None,verbose=False):
 def storey_bh(p,alpha=0.1,lamb=0.5,n_full=None,verbose=False):
     if n_full is None: 
         n_full = p.shape[0]
-    else:
+    if n_full > p.shape[0]:
         lamb = np.min(p[p>0.5])
-    pi0_hat  = (np.sum(p>lamb)/(1-lamb)/p.shape[0]).clip(max=1)  
+    print('lamb= %0.4f'%lamb)
+    pi0_hat  = (np.sum(p>lamb)/(1-lamb)/n_full).clip(max=1)  
     alpha   /= pi0_hat
-    print('## pi0_hat=%0.3f'%pi0_hat)
-    
+    print('## pi0_hat=%0.3f'%pi0_hat) 
     p_sort = sorted(p)
     n_rej = 0
     for i in range(p.shape[0]):

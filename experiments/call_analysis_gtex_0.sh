@@ -1,0 +1,9 @@
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_small' -n 'GTEx_small' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Subcutaneous' -n 'Adipose_Subcutaneous' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Subcutaneous_chr21' -n 'Adipose_Subcutaneous-chr21' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Subcutaneous_aug' -n 'Adipose_Subcutaneous-aug' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Subcutaneous_a_ur' -n 'Adipose_Subcutaneous-a_ur' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Visceral_Omentum' -n 'Adipose_Visceral_Omentum' & 
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Visceral_Omentum_chr21' -n 'Adipose_Visceral_Omentum-chr21' &
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Visceral_Omentum_aug' -n 'Adipose_Visceral_Omentum-aug' & 
+python ./experiments/analysis_gtex.py -d 'load_GTEx' -o 'GTEx_Adipose_Visceral_Omentum_a_ur' -n 'Adipose_Visceral_Omentum-a_ur' &

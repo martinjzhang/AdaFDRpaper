@@ -1,0 +1,17 @@
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Adipose_Subcutaneous' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Adipose_Visceral_Omentum' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Artery_Aorta' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Breast_Mammary_Tissue' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Cells_EBV-transformed_lymphocytes' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Colon_Sigmoid' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Colon_Transverse' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Esophagus_Gastroesophageal_Junction' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Esophagus_Mucosa' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Esophagus_Muscularis' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Heart_Atrial_Appendage' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Heart_Left_Ventricle' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Lung' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Muscle_Skeletal' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Pancreas' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Stomach' &
+python ./experiments/gtex_covariate_to_cluster_label.py -d 'Whole_Blood' &
