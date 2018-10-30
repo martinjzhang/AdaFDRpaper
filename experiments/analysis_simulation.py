@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 import argparse
-import nfdr2.data_loader as dl
-import nfdr2.method as md
+import adafdr.data_loader as dl
+import adafdr.method as md
 import time
 import matplotlib.pyplot as plt
 import pickle
@@ -52,25 +52,25 @@ def main(args):
             p, x, h = dl.load_simulation_data(filename)
             n_full = p.shape[0]
             # Report the baseline.
-            n_rej, t_rej = md.bh(p, alpha=alpha, n_full=n_full, verbose=False)
+            n_rej, t_rej = md.bh_test(p, alpha=alpha, n_full=n_full, verbose=False)
             result_dic['bh'][alpha].append([h, p<=t_rej])
             logger.info('## BH, n_rej=%d, t_rej=%0.5f'%(n_rej,t_rej))
-            n_rej, t_rej, pi0_hat = md.storey_bh(p, alpha=alpha, n_full=n_full, verbose=False)
+            n_rej, t_rej, pi0_hat = md.sbh_test(p, alpha=alpha, n_full=n_full, verbose=False)
             result_dic['sbh'][alpha].append([h, p<=t_rej])
             logger.info('## SBH, n_rej=%d, t_rej=%0.5f, pi0_hat=%0.3f'%(n_rej, t_rej, pi0_hat))
             # Fast mode.
             start_time = time.time()
-            n_rej,t_rej,_= md.method_hs(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                    verbose=False, output_folder=None, random_state=0,\
-                                    fast_mode=True)
+            n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+                                          verbose=False, output_folder=None, random_state=0,\
+                                          fast_mode=True)
             time_dic['nfdr (fast)'][alpha][filename_short] = time.time()-start_time
             result_dic['nfdr (fast)'][alpha].append([h, p<=t_rej])
             logger.info('## nfdr2 (fast mode), n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
             logger.info('## Total time (fast mode): %0.1fs'%(time.time()-start_time))
             # Full mode.
             start_time = time.time()
-            n_rej,t_rej,_= md.method_hs(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                        verbose=False, output_folder=None, random_state=0)
+            n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+                                          verbose=False, output_folder=None, random_state=0)
             time_dic['nfdr'][alpha][filename_short] = time.time()-start_time
             result_dic['nfdr'][alpha].append([h, p<=t_rej])
             logger.info('## nfdr2, n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))

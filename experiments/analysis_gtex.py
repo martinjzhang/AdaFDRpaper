@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 import argparse
-import nfdr2.data_loader as dl
-import nfdr2.method as md
+import adafdr.data_loader as dl
+import adafdr.method as md
 import time
 import matplotlib.pyplot as plt
 import pickle
@@ -34,15 +34,15 @@ def main(args):
     logger.info('# p: %s'%str(p[0:2]))
     logger.info('# x: %s'%str(x[0:2, :]))
     # Report the baseline methods.
-    n_rej, t_rej = md.bh(p, alpha=alpha, n_full=n_full, verbose=False)
+    n_rej, t_rej = md.bh_test(p, alpha=alpha, n_full=n_full, verbose=False)
     logger.info('## BH, n_rej=%d, t_rej=%0.5f'%(n_rej,t_rej))
     result_dic['bh'] = {'h_hat': p < t_rej}
-    n_rej, t_rej, pi0_hat = md.storey_bh(p, alpha=alpha, n_full=n_full, verbose=False)
+    n_rej, t_rej, pi0_hat = md.sbh_test(p, alpha=alpha, n_full=n_full, verbose=False)
     result_dic['sbh'] = {'h_hat': p < t_rej}
     logger.info('## SBH, n_rej=%d, t_rej=%0.5f, pi0_hat=%0.3f'%(n_rej, t_rej, pi0_hat))    
     # Analysis
-    md.feature_explore(p, x, alpha=alpha, n_full=n_full, vis_dim=None, cate_name=cate_name,\
-                       output_folder=output_folder, h=None)
+    md.adafdr_explore(p, x, alpha=alpha, n_full=n_full, vis_dim=None, cate_name=cate_name,\
+                      output_folder=output_folder, h=None)
     # Fast mode.
     output_folder_fast = output_folder + '_fast'
     if not os.path.exists(output_folder_fast):
@@ -53,9 +53,9 @@ def main(args):
     logger.info('# p: %s'%str(p[0:2]))
     logger.info('# x: %s'%str(x[0:2, :]))
     start_time = time.time()
-    n_rej,t_rej,_= md.method_hs(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
-                                verbose=True, output_folder=output_folder_fast, random_state=0,\
-                                fast_mode=True)
+    n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
+                                  verbose=True, output_folder=output_folder_fast, random_state=0,\
+                                  fast_mode=True)
     result_dic['nfdr (fast)'] = {'h_hat': p < t_rej}
     logger.info('## nfdr2 (fast mode), n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
     logger.info('## Total time (fast mode): %0.1fs'%(time.time()-start_time))
@@ -63,8 +63,8 @@ def main(args):
     logger.info('# p: %s'%str(p[0:2]))
     logger.info('# x: %s'%str(x[0:2, :]))
     start_time = time.time()
-    n_rej,t_rej,_= md.method_hs(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
-                                verbose=True, output_folder=output_folder, random_state=0)
+    n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
+                                  verbose=True, output_folder=output_folder, random_state=0)
     result_dic['nfdr'] = {'h_hat': p < t_rej}
     logger.info('## nfdr2, n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
     logger.info('## Total time: %0.1fs'%(time.time()-start_time))

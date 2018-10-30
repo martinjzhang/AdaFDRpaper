@@ -5,8 +5,8 @@ import logging
 import os
 import sys
 import argparse
-import nfdr2.data_loader as dl
-import nfdr2.method as md
+import adafdr.data_loader as dl
+import adafdr.method as md
 import time
 import matplotlib.pyplot as plt
 import pickle
@@ -27,8 +27,8 @@ def main(args):
     p, x, n_full, cate_name, cis_name = dl.load_GTEx(args.data_name,\
                                                      if_impute=False)
     # feature_explore
-    md.feature_explore(p, x, alpha=alpha, n_full=n_full, vis_dim=None, cate_name=cate_name,\
-                       output_folder=output_folder, h=None)
+    md.adafdr_explore(p, x, alpha=alpha, n_full=n_full, vis_dim=None, cate_name=cate_name,\
+                      output_folder=output_folder, h=None)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Side-info assisted multiple hypothesis testing')
