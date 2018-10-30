@@ -1,4 +1,0 @@
-{
-  "test/test_one.py::test_failing": true,
-  "test/test_two.py::test_failing": true
-}
