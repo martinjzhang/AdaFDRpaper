@@ -269,10 +269,12 @@ def get_summary_stats(filename=None, folder_r=None):
 
 def plot_size_power(summary_stats, method_mapping_dic, data_name='', output_folder=None):
     marker_list = ['o', 'v', '^', '*', 'h', 'd']
-    color_list = ['C8', 'C5', 'C1', 'C2', 'C3', 'C0']
+    # color_list = ['C8', 'C5', 'C1', 'C2', 'C3', 'C0']
+    color_list = ['C1', 'C2', 'C3', 'C0', 'C5', 'C8']
     alpha_list = [0.05, 0.1, 0.15, 0.2]
     axes = plt.figure(figsize = [5, 4])
     method_list = list(summary_stats.keys())
+    method_list = ['nfdr (fast)', 'nfdr', 'adapt', 'ihw', 'sbh', 'bh']
     n_data = summary_stats[method_list[0]]['FDP'].shape[0]
     for i_method,method in enumerate(method_list):
         y_val = np.mean(summary_stats[method]['FDP'], axis=0)

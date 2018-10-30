@@ -204,7 +204,7 @@ def feature_explore(p, x_input, alpha=0.1, n_full=None, vis_dim=None,\
         plt.ylabel('p-value', fontsize=14)
         plt.xlabel('covariate $x$', fontsize=14)
         if feature_type == 'discrete':
-            plt.xticks(x_val_, cate_name_, rotation=45, fontsize=12)
+            plt.xticks(x_val_, cate_name_, rotation=90, fontsize=12)
         plt.tight_layout()
         if output_folder is not None:
             plt.savefig(output_folder+'/explore_p_%s.png'%title)
@@ -217,7 +217,7 @@ def feature_explore(p, x_input, alpha=0.1, n_full=None, vis_dim=None,\
         plt.bar(x_grid, p_alt, width=bin_width, color='orange', alpha=0.6, label='alt')
         plt.xlim([x_min, x_max])
         if feature_type=='discrete': 
-            plt.xticks(x_grid, cate_name_, rotation=45, fontsize=12)
+            plt.xticks(x_grid, cate_name_, rotation=90, fontsize=12)
         elif x_max>1e4:
             plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         plt.ylabel('null/alt proportion', fontsize=14)
