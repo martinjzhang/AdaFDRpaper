@@ -60,17 +60,22 @@ def main(args):
             logger.info('## SBH, n_rej=%d, t_rej=%0.5f, pi0_hat=%0.3f'%(n_rej, t_rej, pi0_hat))
             # Fast mode.
             start_time = time.time()
-            n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                          verbose=False, output_folder=None, random_state=0,\
-                                          fast_mode=True)
+            res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+                                 verbose=False, output_folder=None, random_state=0,\
+                                 fast_mode=True)
+            n_rej = res['n_rej']
+            t_rej = res['threshold']
             time_dic['nfdr (fast)'][alpha][filename_short] = time.time()-start_time
             result_dic['nfdr (fast)'][alpha].append([h, p<=t_rej])
             logger.info('## nfdr2 (fast mode), n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
             logger.info('## Total time (fast mode): %0.1fs'%(time.time()-start_time))
             # Full mode.
             start_time = time.time()
-            n_rej,t_rej,_= md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                          verbose=False, output_folder=None, random_state=0)
+            res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+                                 verbose=False, output_folder=None, random_state=0,\
+                                 fast_mode=False, single_core=False)
+            n_rej = res['n_rej']
+            t_rej = res['threshold']
             time_dic['nfdr'][alpha][filename_short] = time.time()-start_time
             result_dic['nfdr'][alpha].append([h, p<=t_rej])
             logger.info('## nfdr2, n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
