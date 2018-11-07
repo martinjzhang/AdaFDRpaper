@@ -5,5 +5,3 @@ python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_d
 python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_data_wd' -o 'simu_data_wd' &
 python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_data_sd' -o 'simu_data_sd' &
 python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_10d_bump_slope' -o 'simu_10d_bump_slope' &
-python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_speed_dim' -o 'simu_speed_dim' &
-python ./experiments/analysis_simulation.py -i '/data3/martin/nfdr2_simulation_data/simu_speed_sample' -o 'simu_speed_sample' &

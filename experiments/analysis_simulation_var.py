@@ -30,13 +30,7 @@ def main(args):
     logger = logging.getLogger()
     # Run method in all data in the folder
     file_list = os.listdir(args.input_folder)
-    alpha_list = [0.05, 0.1, 0.15, 0.2]
-    if 'speed' in args.input_folder:
-        alpha_list = [0.1]
-    if 'ntest' in args.input_folder:
-        alpha_list = [0.1]
-    if 'prop_alt' in args.input_folder:
-        alpha_list = [0.1]
+    alpha_list = [0.05]
     result_dic = {'bh': {}, 'sbh': {}, 'nfdr (fast)': {}, 'nfdr': {}}
     time_dic = {'nfdr (fast)': {}, 'nfdr': {}}
     for alpha in alpha_list:
@@ -57,10 +51,10 @@ def main(args):
             n_full = p.shape[0]
             # Report the baseline.
             n_rej, t_rej = md.bh_test(p, alpha=alpha, n_full=n_full, verbose=False)
-            result_dic['bh'][alpha].append([h, p<=t_rej])
+            result_dic['bh'][filename_short] = ([h, p<=t_rej])
             logger.info('## BH, n_rej=%d, t_rej=%0.5f'%(n_rej,t_rej))
             n_rej, t_rej, pi0_hat = md.sbh_test(p, alpha=alpha, n_full=n_full, verbose=False)
-            result_dic['sbh'][alpha].append([h, p<=t_rej])
+            result_dic['sbh'][filename_short] = [h, p<=t_rej]
             logger.info('## SBH, n_rej=%d, t_rej=%0.5f, pi0_hat=%0.3f'%(n_rej, t_rej, pi0_hat))
             # Fast mode.
             start_time = time.time()
@@ -70,7 +64,7 @@ def main(args):
             n_rej = res['n_rej']
             t_rej = res['threshold']
             time_dic['nfdr (fast)'][alpha][filename_short] = time.time()-start_time
-            result_dic['nfdr (fast)'][alpha].append([h, p<=t_rej])
+            result_dic['nfdr (fast)'][filename_short] = [h, p<=t_rej]
             logger.info('## nfdr2 (fast mode), n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
             logger.info('## Total time (fast mode): %0.1fs'%(time.time()-start_time))
             # Full mode.
@@ -81,7 +75,7 @@ def main(args):
             n_rej = res['n_rej']
             t_rej = res['threshold']
             time_dic['nfdr'][alpha][filename_short] = time.time()-start_time
-            result_dic['nfdr'][alpha].append([h, p<=t_rej])
+            result_dic['nfdr'][filename_short] = [h, p<=t_rej]
             logger.info('## nfdr2, n_rej1=%d, n_rej2=%d, n_rej_total=%d'%(n_rej[0],n_rej[1],n_rej[0]+n_rej[1]))
             logger.info('## Total time: %0.1fs'%(time.time()-start_time))
             logger.info('\n')
