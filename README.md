@@ -9,7 +9,7 @@ installed using
 pip install adafdr
 ```
 
-The data are either incorporated as part of the *adafdr* package or can be found at [AdaFDRpaper_data]().
+The data are either incorporated as part of the *adafdr* package or can be found at [AdaFDRpaper_data](https://osf.io/8kj2a/download).
 
 # Experiments
 ## GTEx demo: 
@@ -62,7 +62,7 @@ Only the GTEx data for the two adipose tissues are provided, which can be downlo
 
 
 # Data
-We make most of the data available in the data folder [AdaFDRpaper_data]() including
+We make most of the data available in the data folder [AdaFDRpaper_data](https://osf.io/8kj2a/download) including
 
 - GTEx data: the data for the tissue *Adipose_Subcutaneous* is provided (Fig. 2b, 2c, 2d) 
   - Adipose_Subcutaneous tissue with four covariates: 
