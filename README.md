@@ -9,6 +9,8 @@ installed using
 pip install adafdr
 ```
 
+The data are either incorporated as part of the *adafdr* package or can be found at [AdaFDRpaper_data]().
+
 # Experiments
 ## GTEx demo: 
 Due to the large size of GTEx data, we provide a GTEx demo that is ~100 times smaller but yet carries all important features. 
