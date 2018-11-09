@@ -14,12 +14,14 @@ pip install adafdr
 Due to the large size of GTEx data, we provide a GTEx demo that is ~100 times smaller but yet carries all important features. 
 - Location: `./vignettes/gtex_demo.ipynb`
 - Description: the gtex_demo data is incorporated as part of the *adafdr* package and can be loaded directly. It 
-  contains 50k associations from the Adipose_Subcutaneous tissue with four covariates. The data has been filtered 
-  to have only associations with p-values <0.01 or >0.99. Hence the actual number of associations is ~2.5million (50k*50),
-  presenting a good proxy for the full GTEx data. 
+  contains 50k associations from the Adipose_Subcutaneous tissue with four covariates. Note that this is after 
+  the filtering that only  associations with p-values <0.01 or >0.99 are included.
+  Hence the actual number of associations is ~2.5million (50k*50), presenting a good proxy for the full GTEx data. 
 
 ## small GTEx data
 The two small_GTEx data (Fig. 3a) are incorporated as part of the *adafdr* package and hence can be loaded directly.
+Note that this data is not filtered. Hence they contain only 300k associations each, which are smaller than the 
+gtex_demo above.
 - small_GTEx_Adipose_Subcutaneous: `./vignettes/small_GTEx_Adipose_Subcutaneous.ipynb`
 - small_GTEx_Adipose_Visceral_Omentum: `./vignettes/small_GTEx_Adipose_Visceral_Omentum.ipynb`
 
