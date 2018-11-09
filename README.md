@@ -9,10 +9,14 @@ installed using
 pip install adafdr
 ```
 
-The data are either incorporated as part of the *adafdr* package or can be found at [AdaFDRpaper_data]().
+The data are either incorporated as part of the *adafdr* package or can be found at [AdaFDRpaper_data](https://osf.io/hjwnf/).
+- Download the data: `wget https://osf.io/hjwnf/download`
+  
+  (`download` maybe be changed to the actual name of the compressed file)  
+- Extract the file: `tar -zxvf download`
 
 # Experiments
-## GTEx demo: 
+## GTEx demo
 Due to the large size of GTEx data, we provide a GTEx demo that is ~100 times smaller but yet carries all important features. 
 - Location: `./vignettes/gtex_demo.ipynb`
 - Description: the gtex_demo data is incorporated as part of the *adafdr* package and can be loaded directly. It 
@@ -62,17 +66,7 @@ Only the GTEx data for the two adipose tissues are provided, which can be downlo
 
 
 # Data
-We make most of the data available in the data folder [AdaFDRpaper_data]() including
-
-- GTEx data: the data for the tissue *Adipose_Subcutaneous* is provided (Fig. 2b, 2c, 2d) 
-  - Adipose_Subcutaneous tissue with four covariates: 
-  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered`
-  - Adipose_Subcutaneous tissue with four covariates plus the -log10 p-value from the other adipose tissue: 
-  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered.augmented.txt`
-  - Adipose_Subcutaneous tissue with four covariates plus the -log10 p-value from the brain tissue: 
-  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered.augmented_not_related.txt`
-  - Format: col1: gene-SNP name; col2: gene expression; col3: AAF; col4: distance from TSS; 
-    col5: chromatin states; col7: p-value; col8 (if exist): augmented p-value
+We make most of the data available in the data folder [AdaFDRpaper_data](https://osf.io/hjwnf/) including
   
 - small GTEx data (Fig. 3a): `/data3/martin/AdaFDRpaper_data/gtex_adipose_chr21_300k`
   - The first 300k hypotheses from chromosome 21.
@@ -103,5 +97,20 @@ We make most of the data available in the data folder [AdaFDRpaper_data]() inclu
   - Simulation varying the number of tests: `./data_ntest` 
   - Simulation varying the non-null proportion: `./data_prop_alt` 
   
+The Gtex data for the tissue *Adipose_Subcutaneous* is provided as [GTEx_Adipose_Subcutaneous](https://osf.io/c5yk6/) (Fig. 2b, 2c, 2d). It is stored separately due to its large size. 
+- Downloading
+  - Download the data: `wget https://osf.io/c5yk6/download`
+    
+    (`download` maybe be changed to the actual name of the compressed file)
+  - Extract the file: `tar -zxvf download` 
+- Contents
+  - Adipose_Subcutaneous tissue with four covariates: 
+  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered`
+  - Adipose_Subcutaneous tissue with four covariates plus the -log10 p-value from the other adipose tissue: 
+  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered.augmented.txt`
+  - Adipose_Subcutaneous tissue with four covariates plus the -log10 p-value from the brain tissue: 
+  `AdaFDRpaper_data/Adipose_Subcutaneous/Adipose_Subcutaneous.allpairs.txt.processed.filtered.augmented_not_related.txt`
+  - Format: col1: gene-SNP name; col2: gene expression; col3: AAF; col4: distance from TSS; 
+    col5: chromatin states; col7: p-value; col8 (if exist): augmented p-value
 # Citation 
 Coming soon ...
