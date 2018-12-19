@@ -2,239 +2,239 @@
 ## BH discoveries: 584, threshold=0.001
 ## SBH discoveries: 719, threshold=0.001, pi0_hat=0.907
 ## AdaFDR-fast discoveries: fold_1=463, fold_2=473, total=936
-## Time: 1.8s## AdaFDR discoveries: fold_1=227, fold_2=390, total=617
-## Time: 129.8s
+## Time: 2.0s## AdaFDR discoveries: fold_1=463, fold_2=462, total=925
+## Time: 71.2s
 # Processing data_5 with alpha=0.10
 ## BH discoveries: 1259, threshold=0.003
 ## SBH discoveries: 1389, threshold=0.003, pi0_hat=0.907
 ## AdaFDR-fast discoveries: fold_1=773, fold_2=855, total=1628
-## Time: 1.9s## AdaFDR discoveries: fold_1=667, fold_2=836, total=1503
-## Time: 135.2s
+## Time: 1.9s## AdaFDR discoveries: fold_1=697, fold_2=836, total=1533
+## Time: 140.0s
 # Processing data_5 with alpha=0.15
 ## BH discoveries: 1819, threshold=0.005
 ## SBH discoveries: 2014, threshold=0.007, pi0_hat=0.907
 ## AdaFDR-fast discoveries: fold_1=1135, fold_2=1204, total=2339
 ## Time: 1.9s## AdaFDR discoveries: fold_1=1139, fold_2=1213, total=2352
-## Time: 135.5s
+## Time: 144.8s
 # Processing data_5 with alpha=0.20
 ## BH discoveries: 2269, threshold=0.009
 ## SBH discoveries: 2464, threshold=0.011, pi0_hat=0.907
 ## AdaFDR-fast discoveries: fold_1=1446, fold_2=1509, total=2955
-## Time: 2.0s## AdaFDR discoveries: fold_1=1467, fold_2=1444, total=2911
-## Time: 143.4s
+## Time: 2.5s## AdaFDR discoveries: fold_1=1467, fold_2=1444, total=2911
+## Time: 158.5s
 # Processing data_2 with alpha=0.05
 ## BH discoveries: 414, threshold=0.000
 ## SBH discoveries: 509, threshold=0.001, pi0_hat=0.901
 ## AdaFDR-fast discoveries: fold_1=404, fold_2=499, total=903
-## Time: 2.3s## AdaFDR discoveries: fold_1=383, fold_2=519, total=902
-## Time: 126.2s
+## Time: 2.6s## AdaFDR discoveries: fold_1=383, fold_2=499, total=882
+## Time: 72.8s
 # Processing data_2 with alpha=0.10
 ## BH discoveries: 1034, threshold=0.002
 ## SBH discoveries: 1094, threshold=0.002, pi0_hat=0.901
 ## AdaFDR-fast discoveries: fold_1=688, fold_2=946, total=1634
-## Time: 2.5s## AdaFDR discoveries: fold_1=684, fold_2=893, total=1577
-## Time: 138.2s
+## Time: 2.6s## AdaFDR discoveries: fold_1=684, fold_2=893, total=1577
+## Time: 140.6s
 # Processing data_2 with alpha=0.15
 ## BH discoveries: 1484, threshold=0.004
 ## SBH discoveries: 1664, threshold=0.005, pi0_hat=0.901
 ## AdaFDR-fast discoveries: fold_1=944, fold_2=1215, total=2159
-## Time: 2.4s## AdaFDR discoveries: fold_1=1012, fold_2=1318, total=2330
-## Time: 131.6s
+## Time: 2.5s## AdaFDR discoveries: fold_1=1012, fold_2=1318, total=2330
+## Time: 152.1s
 # Processing data_2 with alpha=0.20
 ## BH discoveries: 2059, threshold=0.008
 ## SBH discoveries: 2279, threshold=0.010, pi0_hat=0.901
 ## AdaFDR-fast discoveries: fold_1=1183, fold_2=1542, total=2725
-## Time: 2.5s## AdaFDR discoveries: fold_1=1233, fold_2=1621, total=2854
-## Time: 143.4s
+## Time: 2.6s## AdaFDR discoveries: fold_1=1233, fold_2=1621, total=2854
+## Time: 156.4s
 # Processing data_0 with alpha=0.05
 ## BH discoveries: 544, threshold=0.001
 ## SBH discoveries: 664, threshold=0.001, pi0_hat=0.905
-## AdaFDR-fast discoveries: fold_1=285, fold_2=406, total=691
-## Time: 2.0s## AdaFDR discoveries: fold_1=225, fold_2=337, total=562
-## Time: 135.1s
+## AdaFDR-fast discoveries: fold_1=365, fold_2=406, total=771
+## Time: 2.1s## AdaFDR discoveries: fold_1=365, fold_2=406, total=771
+## Time: 74.0s
 # Processing data_0 with alpha=0.10
 ## BH discoveries: 1129, threshold=0.002
 ## SBH discoveries: 1284, threshold=0.003, pi0_hat=0.905
-## AdaFDR-fast discoveries: fold_1=468, fold_2=612, total=1080
-## Time: 1.9s## AdaFDR discoveries: fold_1=569, fold_2=624, total=1193
-## Time: 126.7s
+## AdaFDR-fast discoveries: fold_1=631, fold_2=650, total=1281
+## Time: 2.2s## AdaFDR discoveries: fold_1=607, fold_2=630, total=1237
+## Time: 144.6s
 # Processing data_0 with alpha=0.15
 ## BH discoveries: 1544, threshold=0.005
 ## SBH discoveries: 1769, threshold=0.006, pi0_hat=0.905
-## AdaFDR-fast discoveries: fold_1=863, fold_2=966, total=1829
-## Time: 2.2s## AdaFDR discoveries: fold_1=834, fold_2=938, total=1772
-## Time: 131.7s
+## AdaFDR-fast discoveries: fold_1=902, fold_2=966, total=1868
+## Time: 2.1s## AdaFDR discoveries: fold_1=898, fold_2=943, total=1841
+## Time: 147.9s
 # Processing data_0 with alpha=0.20
 ## BH discoveries: 2069, threshold=0.008
 ## SBH discoveries: 2244, threshold=0.010, pi0_hat=0.905
-## AdaFDR-fast discoveries: fold_1=1043, fold_2=1280, total=2323
-## Time: 1.9s## AdaFDR discoveries: fold_1=1056, fold_2=1172, total=2228
-## Time: 140.5s
+## AdaFDR-fast discoveries: fold_1=1101, fold_2=1280, total=2381
+## Time: 2.3s## AdaFDR discoveries: fold_1=1106, fold_2=1200, total=2306
+## Time: 151.1s
 # Processing data_3 with alpha=0.05
 ## BH discoveries: 514, threshold=0.001
 ## SBH discoveries: 604, threshold=0.001, pi0_hat=0.912
 ## AdaFDR-fast discoveries: fold_1=469, fold_2=425, total=894
-## Time: 2.5s## AdaFDR discoveries: fold_1=408, fold_2=470, total=878
-## Time: 140.8s
+## Time: 2.4s## AdaFDR discoveries: fold_1=469, fold_2=425, total=894
+## Time: 75.2s
 # Processing data_3 with alpha=0.10
 ## BH discoveries: 1129, threshold=0.002
 ## SBH discoveries: 1184, threshold=0.003, pi0_hat=0.912
 ## AdaFDR-fast discoveries: fold_1=894, fold_2=812, total=1706
 ## Time: 2.8s## AdaFDR discoveries: fold_1=916, fold_2=823, total=1739
-## Time: 145.8s
+## Time: 149.6s
 # Processing data_3 with alpha=0.15
 ## BH discoveries: 1709, threshold=0.005
 ## SBH discoveries: 1839, threshold=0.006, pi0_hat=0.912
 ## AdaFDR-fast discoveries: fold_1=1199, fold_2=1063, total=2262
-## Time: 2.4s## AdaFDR discoveries: fold_1=1193, fold_2=1051, total=2244
-## Time: 156.6s
+## Time: 2.3s## AdaFDR discoveries: fold_1=1193, fold_2=1051, total=2244
+## Time: 160.7s
 # Processing data_3 with alpha=0.20
 ## BH discoveries: 2384, threshold=0.010
 ## SBH discoveries: 2564, threshold=0.011, pi0_hat=0.912
 ## AdaFDR-fast discoveries: fold_1=1625, fold_2=1428, total=3053
-## Time: 2.8s## AdaFDR discoveries: fold_1=1497, fold_2=1461, total=2958
+## Time: 2.7s## AdaFDR discoveries: fold_1=1497, fold_2=1461, total=2958
 ## Time: 161.9s
 # Processing data_7 with alpha=0.05
 ## BH discoveries: 459, threshold=0.000
 ## SBH discoveries: 559, threshold=0.001, pi0_hat=0.909
-## AdaFDR-fast discoveries: fold_1=107, fold_2=633, total=740
-## Time: 3.2s## AdaFDR discoveries: fold_1=95, fold_2=407, total=502
-## Time: 143.9s
+## AdaFDR-fast discoveries: fold_1=254, fold_2=633, total=887
+## Time: 3.3s## AdaFDR discoveries: fold_1=254, fold_2=633, total=887
+## Time: 4.5s
 # Processing data_7 with alpha=0.10
 ## BH discoveries: 879, threshold=0.002
 ## SBH discoveries: 959, threshold=0.002, pi0_hat=0.909
 ## AdaFDR-fast discoveries: fold_1=501, fold_2=915, total=1416
-## Time: 3.3s## AdaFDR discoveries: fold_1=580, fold_2=934, total=1514
-## Time: 150.2s
+## Time: 3.1s## AdaFDR discoveries: fold_1=580, fold_2=934, total=1514
+## Time: 146.5s
 # Processing data_7 with alpha=0.15
 ## BH discoveries: 1499, threshold=0.004
 ## SBH discoveries: 1744, threshold=0.006, pi0_hat=0.909
 ## AdaFDR-fast discoveries: fold_1=885, fold_2=1215, total=2100
 ## Time: 3.5s## AdaFDR discoveries: fold_1=813, fold_2=1178, total=1991
-## Time: 148.1s
+## Time: 146.9s
 # Processing data_7 with alpha=0.20
 ## BH discoveries: 2064, threshold=0.008
 ## SBH discoveries: 2309, threshold=0.010, pi0_hat=0.909
 ## AdaFDR-fast discoveries: fold_1=1240, fold_2=1562, total=2802
-## Time: 4.0s## AdaFDR discoveries: fold_1=1198, fold_2=1533, total=2731
-## Time: 160.2s
+## Time: 3.3s## AdaFDR discoveries: fold_1=1198, fold_2=1533, total=2731
+## Time: 157.3s
 # Processing data_9 with alpha=0.05
 ## BH discoveries: 679, threshold=0.001
 ## SBH discoveries: 704, threshold=0.001, pi0_hat=0.911
 ## AdaFDR-fast discoveries: fold_1=493, fold_2=454, total=947
-## Time: 2.5s## AdaFDR discoveries: fold_1=453, fold_2=497, total=950
-## Time: 145.4s
+## Time: 2.4s## AdaFDR discoveries: fold_1=493, fold_2=497, total=990
+## Time: 73.0s
 # Processing data_9 with alpha=0.10
 ## BH discoveries: 1109, threshold=0.002
 ## SBH discoveries: 1244, threshold=0.003, pi0_hat=0.911
 ## AdaFDR-fast discoveries: fold_1=694, fold_2=761, total=1455
-## Time: 2.2s## AdaFDR discoveries: fold_1=723, fold_2=795, total=1518
-## Time: 136.9s
+## Time: 2.6s## AdaFDR discoveries: fold_1=723, fold_2=795, total=1518
+## Time: 146.0s
 # Processing data_9 with alpha=0.15
 ## BH discoveries: 1569, threshold=0.005
 ## SBH discoveries: 1654, threshold=0.005, pi0_hat=0.911
 ## AdaFDR-fast discoveries: fold_1=1044, fold_2=1037, total=2081
-## Time: 1.9s## AdaFDR discoveries: fold_1=1046, fold_2=1070, total=2116
-## Time: 143.7s
+## Time: 2.6s## AdaFDR discoveries: fold_1=1046, fold_2=1070, total=2116
+## Time: 152.7s
 # Processing data_9 with alpha=0.20
 ## BH discoveries: 2119, threshold=0.008
 ## SBH discoveries: 2309, threshold=0.010, pi0_hat=0.911
 ## AdaFDR-fast discoveries: fold_1=1343, fold_2=1350, total=2693
-## Time: 2.5s## AdaFDR discoveries: fold_1=1299, fold_2=1332, total=2631
-## Time: 148.9s
+## Time: 2.3s## AdaFDR discoveries: fold_1=1299, fold_2=1332, total=2631
+## Time: 159.0s
 # Processing data_4 with alpha=0.05
 ## BH discoveries: 584, threshold=0.001
 ## SBH discoveries: 679, threshold=0.001, pi0_hat=0.898
-## AdaFDR-fast discoveries: fold_1=322, fold_2=627, total=949
-## Time: 2.1s## AdaFDR discoveries: fold_1=313, fold_2=455, total=768
-## Time: 130.6s
+## AdaFDR-fast discoveries: fold_1=402, fold_2=627, total=1029
+## Time: 2.2s## AdaFDR discoveries: fold_1=371, fold_2=452, total=823
+## Time: 145.2s
 # Processing data_4 with alpha=0.10
 ## BH discoveries: 1259, threshold=0.002
 ## SBH discoveries: 1359, threshold=0.003, pi0_hat=0.898
-## AdaFDR-fast discoveries: fold_1=641, fold_2=914, total=1555
-## Time: 2.0s## AdaFDR discoveries: fold_1=641, fold_2=959, total=1600
-## Time: 133.2s
+## AdaFDR-fast discoveries: fold_1=748, fold_2=914, total=1662
+## Time: 2.2s## AdaFDR discoveries: fold_1=737, fold_2=961, total=1698
+## Time: 146.8s
 # Processing data_4 with alpha=0.15
 ## BH discoveries: 1740, threshold=0.005
 ## SBH discoveries: 1935, threshold=0.006, pi0_hat=0.898
 ## AdaFDR-fast discoveries: fold_1=1101, fold_2=1253, total=2354
-## Time: 2.1s## AdaFDR discoveries: fold_1=1079, fold_2=1232, total=2311
-## Time: 137.7s
+## Time: 2.4s## AdaFDR discoveries: fold_1=1079, fold_2=1232, total=2311
+## Time: 152.0s
 # Processing data_4 with alpha=0.20
 ## BH discoveries: 2255, threshold=0.009
 ## SBH discoveries: 2440, threshold=0.011, pi0_hat=0.898
 ## AdaFDR-fast discoveries: fold_1=1407, fold_2=1552, total=2959
-## Time: 2.1s## AdaFDR discoveries: fold_1=1423, fold_2=1585, total=3008
-## Time: 145.7s
+## Time: 2.5s## AdaFDR discoveries: fold_1=1423, fold_2=1585, total=3008
+## Time: 159.2s
 # Processing data_6 with alpha=0.05
 ## BH discoveries: 449, threshold=0.000
 ## SBH discoveries: 614, threshold=0.001, pi0_hat=0.892
 ## AdaFDR-fast discoveries: fold_1=498, fold_2=370, total=868
-## Time: 1.9s## AdaFDR discoveries: fold_1=433, fold_2=346, total=779
-## Time: 144.5s
+## Time: 2.4s## AdaFDR discoveries: fold_1=498, fold_2=346, total=844
+## Time: 74.2s
 # Processing data_6 with alpha=0.10
 ## BH discoveries: 1049, threshold=0.002
 ## SBH discoveries: 1164, threshold=0.003, pi0_hat=0.892
 ## AdaFDR-fast discoveries: fold_1=891, fold_2=742, total=1633
-## Time: 2.1s## AdaFDR discoveries: fold_1=897, fold_2=715, total=1612
-## Time: 145.7s
+## Time: 2.4s## AdaFDR discoveries: fold_1=897, fold_2=715, total=1612
+## Time: 141.1s
 # Processing data_6 with alpha=0.15
 ## BH discoveries: 1534, threshold=0.005
 ## SBH discoveries: 1759, threshold=0.006, pi0_hat=0.892
 ## AdaFDR-fast discoveries: fold_1=1299, fold_2=1010, total=2309
-## Time: 2.5s## AdaFDR discoveries: fold_1=1216, fold_2=1022, total=2238
-## Time: 152.3s
+## Time: 2.3s## AdaFDR discoveries: fold_1=1216, fold_2=1022, total=2238
+## Time: 150.4s
 # Processing data_6 with alpha=0.20
 ## BH discoveries: 2014, threshold=0.008
 ## SBH discoveries: 2339, threshold=0.010, pi0_hat=0.892
 ## AdaFDR-fast discoveries: fold_1=1607, fold_2=1485, total=3092
-## Time: 1.9s## AdaFDR discoveries: fold_1=1597, fold_2=1429, total=3026
-## Time: 164.4s
+## Time: 2.3s## AdaFDR discoveries: fold_1=1597, fold_2=1429, total=3026
+## Time: 151.3s
 # Processing data_1 with alpha=0.05
 ## BH discoveries: 614, threshold=0.001
 ## SBH discoveries: 649, threshold=0.001, pi0_hat=0.875
 ## AdaFDR-fast discoveries: fold_1=434, fold_2=391, total=825
-## Time: 2.5s## AdaFDR discoveries: fold_1=528, fold_2=366, total=894
-## Time: 135.7s
+## Time: 2.3s## AdaFDR discoveries: fold_1=434, fold_2=391, total=825
+## Time: 4.2s
 # Processing data_1 with alpha=0.10
 ## BH discoveries: 1224, threshold=0.002
 ## SBH discoveries: 1399, threshold=0.003, pi0_hat=0.875
 ## AdaFDR-fast discoveries: fold_1=789, fold_2=746, total=1535
-## Time: 3.4s## AdaFDR discoveries: fold_1=819, fold_2=638, total=1457
-## Time: 154.4s
+## Time: 2.4s## AdaFDR discoveries: fold_1=819, fold_2=696, total=1515
+## Time: 141.6s
 # Processing data_1 with alpha=0.15
 ## BH discoveries: 1739, threshold=0.005
 ## SBH discoveries: 1944, threshold=0.007, pi0_hat=0.875
 ## AdaFDR-fast discoveries: fold_1=1086, fold_2=1005, total=2091
-## Time: 3.1s## AdaFDR discoveries: fold_1=1159, fold_2=1098, total=2257
-## Time: 154.4s
+## Time: 2.4s## AdaFDR discoveries: fold_1=1159, fold_2=1098, total=2257
+## Time: 145.7s
 # Processing data_1 with alpha=0.20
 ## BH discoveries: 2119, threshold=0.008
 ## SBH discoveries: 2344, threshold=0.011, pi0_hat=0.875
 ## AdaFDR-fast discoveries: fold_1=1549, fold_2=1296, total=2845
-## Time: 3.2s## AdaFDR discoveries: fold_1=1568, fold_2=1386, total=2954
-## Time: 182.1s
+## Time: 2.3s## AdaFDR discoveries: fold_1=1568, fold_2=1386, total=2954
+## Time: 153.3s
 # Processing data_8 with alpha=0.05
 ## BH discoveries: 637, threshold=0.001
 ## SBH discoveries: 682, threshold=0.001, pi0_hat=0.915
 ## AdaFDR-fast discoveries: fold_1=440, fold_2=579, total=1019
-## Time: 3.0s## AdaFDR discoveries: fold_1=330, fold_2=519, total=849
-## Time: 158.6s
+## Time: 2.2s## AdaFDR discoveries: fold_1=330, fold_2=579, total=909
+## Time: 73.8s
 # Processing data_8 with alpha=0.10
 ## BH discoveries: 1342, threshold=0.003
 ## SBH discoveries: 1362, threshold=0.003, pi0_hat=0.915
 ## AdaFDR-fast discoveries: fold_1=703, fold_2=823, total=1526
-## Time: 2.8s## AdaFDR discoveries: fold_1=729, fold_2=833, total=1562
-## Time: 162.2s
+## Time: 2.4s## AdaFDR discoveries: fold_1=729, fold_2=833, total=1562
+## Time: 144.0s
 # Processing data_8 with alpha=0.15
 ## BH discoveries: 1682, threshold=0.005
 ## SBH discoveries: 1847, threshold=0.006, pi0_hat=0.915
-## AdaFDR-fast discoveries: fold_1=955, fold_2=1006, total=1961
-## Time: 3.1s## AdaFDR discoveries: fold_1=1003, fold_2=1098, total=2101
-## Time: 168.0s
+## AdaFDR-fast discoveries: fold_1=987, fold_2=1006, total=1993
+## Time: 2.1s## AdaFDR discoveries: fold_1=1003, fold_2=1098, total=2101
+## Time: 131.8s
 # Processing data_8 with alpha=0.20
 ## BH discoveries: 2257, threshold=0.009
 ## SBH discoveries: 2422, threshold=0.011, pi0_hat=0.915
 ## AdaFDR-fast discoveries: fold_1=1228, fold_2=1262, total=2490
-## Time: 2.8s## AdaFDR discoveries: fold_1=1214, fold_2=1342, total=2556
-## Time: 181.2s
+## Time: 1.8s## AdaFDR discoveries: fold_1=1214, fold_2=1342, total=2556
+## Time: 133.9s
