@@ -113,4 +113,6 @@ The Gtex data for the tissue *Adipose_Subcutaneous* is provided as [GTEx_Adipose
   - Format: col1: gene-SNP name; col2: gene expression; col3: AAF; col4: distance from TSS; 
     col5: chromatin states; col7: p-value; col8 (if exist): augmented p-value
 # Citation 
-Coming soon ...
+Zhang, Martin J., Fei Xia, and James Zou. "AdaFDR: a Fast, Powerful and Covariate-Adaptive Approach to Multiple Hypothesis Testing." bioRxiv (2018): 496372.
+
+Xia, Fei, et al. "Neuralfdr: Learning discovery thresholds from hypothesis features." Advances in Neural Information Processing Systems. 2017.
