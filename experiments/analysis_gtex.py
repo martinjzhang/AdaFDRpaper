@@ -55,7 +55,7 @@ def main(args):
     start_time = time.time()
     res = md.adafdr_test(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
                          verbose=True, output_folder=output_folder_fast, random_state=0,\
-                         fast_mode=True)
+                         fast_mode=True)  
     n_rej = res['n_rej']
     t_rej = res['threshold']
     result_dic['nfdr (fast)'] = {'h_hat': p < t_rej}
@@ -67,7 +67,7 @@ def main(args):
     start_time = time.time()
     res = md.adafdr_test(p, x, K=5, alpha=alpha, h=None, n_full=n_full, n_itr=n_itr,\
                          verbose=True, output_folder=output_folder, random_state=0,\
-                         fast_mode=False, single_core=False)
+                         fast_mode=False, single_core=False)  
     n_rej = res['n_rej']
     t_rej = res['threshold']
     result_dic['nfdr'] = {'h_hat': p < t_rej}

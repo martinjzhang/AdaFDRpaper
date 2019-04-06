@@ -64,9 +64,16 @@ def main(args):
             logger.info('## SBH, n_rej=%d, t_rej=%0.5f, pi0_hat=%0.3f'%(n_rej, t_rej, pi0_hat))
             # Fast mode.
             start_time = time.time()
-            res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                 verbose=False, output_folder=None, random_state=0,\
-                                 fast_mode=True)
+            # res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+            #                      verbose=False, output_folder=None, random_state=0,\
+            #                      fast_mode=True)
+            res_train = md.adafdr_train(p, x, K=5, alpha=alpha, h=h, n_full=n_full,
+                                        n_itr=n_itr, verbose=False,
+                                        output_folder=None, random_state=0,
+                                        fast_mode=True)
+            res = md.adafdr_test(res_train, alpha, n_full=n_full, 
+                                 output_folder = None)
+    
             n_rej = res['n_rej']
             t_rej = res['threshold']
             time_dic['nfdr (fast)'][alpha][filename_short] = time.time()-start_time
@@ -75,9 +82,15 @@ def main(args):
             logger.info('## Total time (fast mode): %0.1fs'%(time.time()-start_time))
             # Full mode.
             start_time = time.time()
-            res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
-                                 verbose=False, output_folder=None, random_state=0,\
-                                 fast_mode=False, single_core=False)
+            # res = md.adafdr_test(p, x, K=5, alpha=alpha, h=h, n_full=n_full, n_itr=n_itr,\
+            #                      verbose=False, output_folder=None, random_state=0,\
+            #                      fast_mode=False, single_core=False)
+            res_train = md.adafdr_train(p, x, K=5, alpha=alpha, h=h, n_full=n_full,
+                                        n_itr=n_itr, verbose=False,
+                                        output_folder=None, random_state=0,
+                                        fast_mode=False, single_core=False)
+            res = md.adafdr_test(res_train, alpha, n_full=n_full, 
+                                 output_folder = None)
             n_rej = res['n_rej']
             t_rej = res['threshold']
             time_dic['nfdr'][alpha][filename_short] = time.time()-start_time

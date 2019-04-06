@@ -1,3 +1,4 @@
+## Varying parameters 
 ## system settings 
 import matplotlib
 matplotlib.use('Agg')
