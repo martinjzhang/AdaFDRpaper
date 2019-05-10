@@ -1,0 +1,10 @@
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_small' -n 'GTEx_small' &
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Cells_EBV-transformed_lymphocytes' -n 'Cells_EBV-transformed_lymphocytes' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Esophagus_Gastroesophageal_Junction' -n 'Esophagus_Gastroesophageal_Junction' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Heart_Atrial_Appendage' -n 'Heart_Atrial_Appendage' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Heart_Left_Ventricle' -n 'Heart_Left_Ventricle' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Lung' -n 'Lung' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Muscle_Skeletal' -n 'Muscle_Skeletal' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Pancreas' -n 'Pancreas' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Stomach' -n 'Stomach' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Whole_Blood' -n 'Whole_Blood' & 

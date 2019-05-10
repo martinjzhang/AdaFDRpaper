@@ -1,0 +1,9 @@
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_small' -n 'GTEx_small' &
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Adipose_Subcutaneous' -n 'Adipose_Subcutaneous' &
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Adipose_Visceral_Omentum' -n 'Adipose_Visceral_Omentum' &
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Colon_Sigmoid' -n 'Colon_Sigmoid' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Colon_Transverse' -n 'Colon_Transverse' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Esophagus_Mucosa' -n 'Esophagus_Mucosa' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Esophagus_Muscularis' -n 'Esophagus_Muscularis' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Artery_Aorta' -n 'Artery_Aorta' & 
+python ./experiments_v1/analysis_gtex_uni_covariate.py -d 'load_GTEx' -o 'GTEx_Breast_Mammary_Tissue' -n 'Breast_Mammary_Tissue' & 

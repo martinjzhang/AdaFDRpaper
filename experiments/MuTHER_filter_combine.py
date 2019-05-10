@@ -44,8 +44,8 @@ def main():
     input_folder = '/data3/martin/gtex_data/MuTHER'
     f_output_path = input_folder + '/' + 'MuTHER_cis_results_chrall.txt'
     chr_list = list(range(1, 24))
-    for chr in chr_list:
-        filename = 'MuTHER_cis_results_chr%s.txt'%str(chr)        
+    for i_chr in chr_list:
+        filename = 'MuTHER_cis_results_chr%s.txt'%str(i_chr)        
         print(filename)
         f_path = input_folder + '/' + filename
         temp_data = np.loadtxt(f_path, delimiter='\t', skiprows=1, dtype=str)
@@ -53,8 +53,9 @@ def main():
         p = np.array(temp_data[:, 11], dtype=float)
         # temp_data = temp_data[p<0.05, :]
         n_fil = n_fil + temp_data.shape[0]
-        temp_data[:, 0] = chr
-        temp_data = temp_data[:, [0,1,4,11]]
+        temp_data[:, 0] = i_chr
+        # temp_data = temp_data[:, [0,1,4,11]]
+        temp_data = temp_data[:, [0,1,4,11,14,17]]
         # # Convert the name
         # ind_match = np.zeros([temp_data.shape[0]], dtype=bool)
         # for i in range(temp_data.shape[0]):
@@ -66,7 +67,7 @@ def main():
         # temp_data = temp_data[ind_match, :]
         # temp_data = temp_data[:, [0,1,3]]
         # n_unmatch = n_unmatch + np.sum(ind_match==False)
-        if chr == chr_list[0]:
+        if i_chr == chr_list[0]:
             with open(f_output_path, 'w') as f:
                 csv.writer(f).writerows(temp_data)
         else:
@@ -74,7 +75,10 @@ def main():
                 csv.writer(f).writerows(temp_data)
     print('n_full=%d, Completed, time:%0.1f'%(n_full, time.time()-start_time))
     f = open(input_folder + '/' + 'MuTHER_stats.txt', 'w')
-    f.write('n_full = %d, n_fil=%d, n_unmatch=%d'%(n_full, n_fil, n_unmatch))
+    f.write('n_full = %d, n_fil=%d, n_unmatch=%d\n'%(n_full, n_fil, n_unmatch))
+    f.write('time=%0.1fs\n'%(time.time()-start_time))
+    f.write('Header\n')
+    f.write('i_chr\tGene\tSNP\tFat_p\tLCL_p\tSkin_p\n')
     f.close()
     
 if __name__ == '__main__':
