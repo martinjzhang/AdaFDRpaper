@@ -2,7 +2,7 @@
 ## Data
 - For those whose are interested in the main GTEx experiments in Fig. 2, a smaller data for the tissue *Adipose_Subcutaneous* is available at [GTEx_Adipose_Subcutaneous](https://osf.io/c5yk6/)
 
-- The data for all GTEx experiments is available at [GTEx_full](aaa) 
+- The data for all GTEx experiments is available at [GTEx_full](https://osf.io/9vrax/) 
 
 ## 1.1 Multiple testing for 17 tissues with four covariates (Fig. 2a)
 - Code:
