@@ -41,7 +41,7 @@ Jupyter notebook files are provided to reproduce the results of *adafdr*, along 
 <!--### R methods -->
 
 ## Simulations
-### Simulation data (Fig. 3c, Supp. Fig. 2a)
+### Simulation data (Fig. 4, Supp. Fig. 8)
 - Simulated data with one covariate: `./vignettes/simulation_1d_bump_slope.ipynb`
 - Simulated data with weakly-dependent p-values: `./vignettes/simulation_data_wd.ipynb`
 - Simulated data with strongly-dependent p-values: `./vignettes/simulation_data_sd.ipynb`
@@ -51,7 +51,7 @@ Jupyter notebook files are provided to reproduce the results of *adafdr*, along 
 - Simulated data with ten covariates: Not included since it takes a long time to run in a jupyter notebook. It is recommended 
   to run it using `.sh` commands
 
-### Simulation data in SummarizedBench (Supp. 3,4)
+### Simulation data in SummarizedBench (Supp. Figs. 9-10)
 - Yeast RNA-Seq *in silico* experiment: `./vignettes/simulation_data_yeast.ipynb`
 - Polyester RNA-Seq *in silico* experiment: `./vignettes/simulation_data_polyester.ipynb`
 - Polyester RNA-Seq *in silico* experiment with uninformative covariate: `./vignettes/simulation_data_polyester_ui.ipynb`
