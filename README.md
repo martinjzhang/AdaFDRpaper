@@ -16,6 +16,7 @@ The data are either incorporated as part of the *adafdr* package or can be found
 - Extract the file: `tar -zxvf download`
 
 # Experiments
+The software version `adafdr 0.1.7` is used for all experiments.
 ## GTEx demo
 Due to the large size of GTEx data, we provide a GTEx demo that is ~100 times smaller but yet carries all important features. 
 - Location: `./vignettes/gtex_demo.ipynb`
